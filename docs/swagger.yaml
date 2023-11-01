@@ -1,10 +1,81 @@
-basePath: /api/v1/film
+basePath: /api/v1
 definitions:
+  endpoints.LoginRequest:
+    properties:
+      password:
+        example: "12345678"
+        maxLength: 30
+        minLength: 8
+        type: string
+      username:
+        example: test123
+        maxLength: 40
+        minLength: 5
+        type: string
+    required:
+    - password
+    - username
+    type: object
+  endpoints.LoginResponse:
+    properties:
+      auth_token:
+        type: string
+    type: object
+  endpoints.RegisterRequest:
+    properties:
+      password:
+        example: "12345678"
+        maxLength: 30
+        minLength: 8
+        type: string
+      username:
+        example: test123
+        maxLength: 40
+        minLength: 5
+        type: string
+    required:
+    - password
+    - username
+    type: object
+  endpoints.RegisterResponse:
+    type: object
   http.HealthCheckResponse:
     properties:
       alive:
         example: true
         type: boolean
+    type: object
+  response.ErrorResponse:
+    properties:
+      code:
+        example: 400
+        type: integer
+      message:
+        example: Bad Request
+        type: string
+    type: object
+  response.ErrorResponseValidation:
+    properties:
+      code:
+        example: 421
+        type: integer
+      data:
+        additionalProperties:
+          type: string
+        type: object
+      message:
+        example: Validation Error
+        type: string
+    type: object
+  response.SuccessResponse:
+    properties:
+      code:
+        example: 200
+        type: integer
+      data: {}
+      message:
+        example: OK
+        type: string
     type: object
 info:
   contact: {}
@@ -12,7 +83,7 @@ info:
   title: Film management service API
   version: "1.0"
 paths:
-  /api/v1/film/health:
+  /health:
     get:
       consumes:
       - application/json
@@ -27,6 +98,84 @@ paths:
       summary: Health Check
       tags:
       - Common
+  /user/login:
+    post:
+      consumes:
+      - application/json
+      description: Login
+      parameters:
+      - description: Login form
+        in: body
+        name: form
+        required: true
+        schema:
+          $ref: '#/definitions/endpoints.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/endpoints.LoginResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "422":
+          description: Data Validation Failed
+          schema:
+            $ref: '#/definitions/response.ErrorResponseValidation'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: Login
+      tags:
+      - User
+  /user/register:
+    post:
+      consumes:
+      - application/json
+      description: Registration
+      parameters:
+      - description: Register form
+        in: body
+        name: form
+        required: true
+        schema:
+          $ref: '#/definitions/endpoints.RegisterRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/endpoints.RegisterResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "422":
+          description: Data Validation Failed
+          schema:
+            $ref: '#/definitions/response.ErrorResponseValidation'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: Registration
+      tags:
+      - User
 schemes:
 - http
 securityDefinitions:

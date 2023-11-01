@@ -5,8 +5,12 @@ import (
 	"film-management/cmd/server/commands/migrate"
 	"film-management/config"
 	httpCommonHandler "film-management/internal/common/transport/http"
+	"film-management/internal/user/domain"
+	"film-management/internal/user/endpoints"
+	httpUserHandler "film-management/internal/user/transport/http"
 	"film-management/pkg/database/postgresql"
 	"film-management/pkg/logger"
+	userRepo "film-management/repositories/storage/postgres"
 	"flag"
 	"fmt"
 	"github.com/oklog/oklog/pkg/group"
@@ -46,17 +50,48 @@ func main() {
 	}
 
 	// Init postgres client
-	_, errClientDB := postgresql.Connect(&cfg.Storage.Postgres, log)
+	postgresClientDB, errClientDB := postgresql.Connect(&cfg.Storage.Postgres, log)
 	if errClientDB != nil {
 		log.Error("Failed to connect to postgres database", zap.Error(errClientDB))
 	}
+
+	// Init opts for services and repositories
+	var (
+		// Init opts for user service
+		optsForUser []domain.OptFunc
+	)
+
+	// Add config to params
+	optsForUser = append(optsForUser, domain.WithConfig(cfg))
+
+	// Init Repositories
+	var (
+		// User repository
+		userRepository = userRepo.NewUserRepository(postgresClientDB, log)
+	)
+
+	// Init services
+	//
+	// User service
+	var userService domain.Service
+	{
+		userService = domain.NewService(userRepository, optsForUser...)
+		userService = domain.NewLoggingMiddleware(log)(userService)
+	}
+
+	// Init endpoints
+	//
+	// User endpoints
+	userEndpoints := endpoints.NewEndpoints(userService, log)
 
 	// Init http handlers
 	var httpHandlers *http.ServeMux
 	{
 		httpHandlers = http.NewServeMux()
 		// Common handlers
-		httpHandlers.Handle(httpCommonHandler.APIPath, httpCommonHandler.NewHTTPHandlers(log))
+		httpHandlers.Handle(httpCommonHandler.APIPath, httpCommonHandler.NewHTTPHandlers(cfg, log))
+		// User handlers
+		httpHandlers.Handle(httpUserHandler.APIPath, httpUserHandler.NewHTTPHandlers(userEndpoints, cfg, log))
 	}
 
 	// Init group

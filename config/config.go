@@ -18,7 +18,6 @@ type Config struct {
 		Port               int
 		CorsAllowedOrigins []string
 		NotAuthUrls        []string
-		PathPublicKeyFile  string
 		AuthTokenForTest   string
 		ReadTimeout        time.Duration
 		ReadHeaderTimeout  time.Duration
@@ -27,6 +26,13 @@ type Config struct {
 	Log     logger.Config
 	Storage struct {
 		Postgres postgresql.Config
+	}
+	Services struct {
+		User struct {
+			AuthDurationMin    time.Duration
+			PathPublicKeyFile  string
+			PathPrivateKeyFile string
+		}
 	}
 }
 
@@ -68,8 +74,18 @@ func setDefaults(v *viper.Viper) {
 	v.SetDefault("http.readHeaderTimeout", 3)
 	v.SetDefault("http.writeTimeout", 10)
 	v.SetDefault("http.corsAllowedOrigins", []string{"*"})
-	v.SetDefault("http.pathPublicKeyFile", "config/ssl/jwtRS256.key.pub")
-	v.SetDefault("http.notAuthUrls", []string{})
+	v.SetDefault("http.notAuthUrls", []string{
+		"/api/v1/health",
+		"/api/v1/swagger",
+		"/api/v1/user/register",
+		"/api/v1/user/login",
+		"/api/v1/user/refresh-token",
+	})
+	// Services
+	// User
+	v.SetDefault("services.user.authDurationMin", 60*24)
+	v.SetDefault("services.user.pathPublicKeyFile", "config/ssl/jwtRS256.key.pub")
+	v.SetDefault("services.user.pathPrivateKeyFile", "config/ssl/jwtRS256.key")
 	// Storage
 	v.SetDefault("storage.postgres.host", "db_film_management")
 	v.SetDefault("storage.postgres.port", 5432)

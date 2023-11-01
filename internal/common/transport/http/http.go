@@ -1,6 +1,7 @@
 package http
 
 import (
+	"film-management/config"
 	"film-management/pkg/transport/http/middlewares"
 	"github.com/gorilla/mux"
 	httpSwagger "github.com/swaggo/http-swagger"
@@ -13,7 +14,7 @@ import (
 )
 
 const (
-	APIPath = "/api/v1/film/"
+	APIPath = "/api/v1/"
 
 	HealthCheckPath = APIPath + "health"
 	SwaggerPath     = APIPath + "swagger"
@@ -23,14 +24,18 @@ const (
 // @version 1.0
 // @description This is a film management service.
 // @schemes http
-// @BasePath /api/v1/film
+// @BasePath /api/v1
 // @securityDefinitions.apikey ApiKeyAuth
 // @in header
 // @name Authorization
 
 // NewHTTPHandlers is a function that returns a http.Handler that makes a set of endpoints available on predefined paths.
-func NewHTTPHandlers(logger *zap.Logger) http.Handler {
+func NewHTTPHandlers(cfg *config.Config, logger *zap.Logger) http.Handler {
 	r := mux.NewRouter()
+
+	// CORS
+	r.Use(mux.CORSMethodMiddleware(r))
+	r.Use(middlewares.CORSMiddleware(cfg.HTTP.CorsAllowedOrigins, logger))
 
 	// Recovery
 	r.Use(middlewares.RecoveryMiddleware(logger))
@@ -52,7 +57,7 @@ func NewHTTPHandlers(logger *zap.Logger) http.Handler {
 // @Accept  json
 // @Produce  json
 // @Success 200 {object} HealthCheckResponse "OK"
-// @Router /api/v1/film/health [get] .
+// @Router /health [get] .
 func HealthCheckHandler(w http.ResponseWriter, _ *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
