@@ -19,3 +19,11 @@
 
 # Go workspace file
 go.work
+
+.DS_Store
+/.idea/
+/config/config.yaml
+/cmd/server/main
+/cmd/tmp/*
+.env
+.cache

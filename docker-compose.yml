@@ -1,0 +1,39 @@
+version: '3.5'
+
+services:
+  go_film_management:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: go_film_management
+    ports:
+      - ${HTTP_EXTERNAL_PORT}:${HTTP_PORT}
+    volumes:
+      - ./:/app:delegated
+    depends_on:
+      - db_film_management
+    links:
+      - ${DB_HOST}:${DB_HOST}
+    networks:
+      - proxynet
+
+  db_film_management:
+    image: postgres:10.1-alpine
+    container_name: db_film_management
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    ports:
+      - ${DB_EXTERNAL_PORT}:${DB_PORT}
+    volumes:
+      - film_management_postgres_data:/var/lib/postgresql/data/
+    networks:
+      - proxynet
+
+volumes:
+  film_management_postgres_data:
+
+networks:
+  proxynet:
+    name: film_network

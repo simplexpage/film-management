@@ -1,0 +1,37 @@
+basePath: /api/v1/film
+definitions:
+  http.HealthCheckResponse:
+    properties:
+      alive:
+        example: true
+        type: boolean
+    type: object
+info:
+  contact: {}
+  description: This is a film management service.
+  title: Film management service API
+  version: "1.0"
+paths:
+  /api/v1/film/health:
+    get:
+      consumes:
+      - application/json
+      description: Health Check
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/http.HealthCheckResponse'
+      summary: Health Check
+      tags:
+      - Common
+schemes:
+- http
+securityDefinitions:
+  ApiKeyAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

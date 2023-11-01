@@ -1,0 +1,15 @@
+name: "film-management"
+http:
+  port: 8080
+storage:
+  postgres:
+    host: "db_film_management"
+    port: 5432
+    database: "db"
+    username: "film"
+    password: "film"
+log:
+  json: false
+  level: "Debug"
+  colored: true
+  development: true
