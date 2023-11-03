@@ -3,7 +3,6 @@ package domain
 import (
 	"context"
 	"film-management/internal/user/domain/models"
-	"film-management/pkg/auth"
 	"film-management/pkg/validation"
 )
 
@@ -13,9 +12,9 @@ type service struct {
 }
 
 // NewService is a constructor for domain service.
-func NewService(userRepository UserRepository, opts ...OptFunc) Service {
+func NewService(userRepository UserRepository, authService AuthService, passwordService PasswordService, opts ...OptFunc) Service {
 	// Init default options
-	o := defaultOpts(userRepository)
+	o := defaultOpts(userRepository, authService, passwordService)
 
 	// Apply options
 	for _, opt := range opts {
@@ -27,54 +26,47 @@ func NewService(userRepository UserRepository, opts ...OptFunc) Service {
 	}
 }
 
-// Register is a method to register user.
-func (s service) Register(ctx context.Context, model *models.User) (err error) {
-	// Check if a user with the same username already exists
-	if err := s.userRepository.UserExists(ctx, model.Username, models.OperationAdd); err != nil {
+// Register is a method to register new user.
+func (s service) Register(ctx context.Context, model *models.User) error {
+	// Check if a user with the same username already exists in db
+	if err := s.userRepository.UserExistsWithUsername(ctx, model.Username); err != nil {
 		switch err {
 		case ErrUserExistsWithUsername:
-			return validation.CustomError{Field: "username", Err: err}
+			return validation.CustomError{Field: "username", Err: ErrUserExistsWithUsername}
 		default:
-			return ErrUserExists
+			return err
 		}
 	}
 
-	// Create hashed password
-	hashPassword, errPassword := model.CreatePassword(model.Password)
+	// Generated hashed password
+	hashPassword, errPassword := s.passwordService.GeneratePasswordHash(model.Password)
 	if errPassword != nil {
-		return errPassword
+		return ErrGeneratePasswordHash
 	}
+	// Set hashed password
 	model.Password = hashPassword
 
-	// Create user
-	if err := s.userRepository.CreateUser(ctx, model); err != nil {
-		return ErrUserCreate
-	}
-
-	return nil
+	// Create user in db
+	return s.userRepository.CreateUser(ctx, model)
 }
 
 // Login is a method to login user.
-func (s service) Login(ctx context.Context, username string, password string) (authToken string, err error) {
-	// Find user by username
+func (s service) Login(ctx context.Context, username string, password string) (string, error) {
+	// Find user by username in db
 	user, err := s.userRepository.FindOneUserByUsername(ctx, username)
 	if err != nil {
 		return "", validation.CustomError{Field: "password", Err: ErrIncorrectLoginOrPassword}
 	}
 
-	// Check password
-	if ok := user.CheckPassword(password); !ok {
+	// Compare password hash
+	if ok := s.passwordService.ComparePasswordHash(password, user.Password); !ok {
 		return "", validation.CustomError{Field: "password", Err: ErrIncorrectLoginOrPassword}
 	}
 
 	// Generate auth token
-	authToken, errAuthToken := auth.GenerateAuthToken(
-		user.UUID.String(),
-		s.cfg.Services.User.PathPrivateKeyFile,
-		s.cfg.Services.User.AuthDurationMin)
-	if errAuthToken != nil {
+	if authToken, errAuthToken := s.authService.GenerateAuthToken(user.UUID.String()); errAuthToken != nil {
 		return "", errAuthToken
+	} else {
+		return authToken, nil
 	}
-
-	return authToken, nil
 }

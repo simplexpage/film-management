@@ -5,7 +5,6 @@ import (
 	httpTransport "film-management/pkg/transport/http/response"
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
-	"go.uber.org/zap"
 	"net/http"
 	"strings"
 )
@@ -22,8 +21,12 @@ const (
 	AuthorizationPrefix string = "Bearer"
 )
 
+type AuthService interface {
+	ParseAuthToken(token string) (*auth.JwtClaims, error)
+}
+
 // AuthMiddleware is a middleware for authentication.
-func AuthMiddleware(notAuthUrls []string, pathPublicKeyFile string, logger *zap.Logger) mux.MiddlewareFunc {
+func AuthMiddleware(notAuthUrls []string, authService AuthService) mux.MiddlewareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			// Skip authentication for some urls
@@ -62,7 +65,7 @@ func AuthMiddleware(notAuthUrls []string, pathPublicKeyFile string, logger *zap.
 			}
 
 			// Parse token
-			token, err := auth.ParseToken(tokenParts[1], pathPublicKeyFile, logger)
+			token, err := authService.ParseAuthToken(tokenParts[1])
 			if err != nil {
 				httpTransport.EncodeError(r.Context(), http.StatusUnauthorized, ErrWrongAuthToken, w)
 
@@ -70,7 +73,7 @@ func AuthMiddleware(notAuthUrls []string, pathPublicKeyFile string, logger *zap.
 			}
 
 			// Add user id to context
-			ctx := auth.SetUserUUIDToContext(r.Context(), token.UUID)
+			ctx := auth.SetUserIDToContext(r.Context(), token.UUID)
 			r = r.WithContext(ctx)
 
 			next.ServeHTTP(w, r)

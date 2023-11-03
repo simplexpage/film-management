@@ -1,24 +1,17 @@
 package domain
 
-import (
-	"film-management/config"
-)
-
 type OptFunc func(*Opts)
 
 type Opts struct {
-	userRepository UserRepository
-	cfg            *config.Config
+	userRepository  UserRepository
+	authService     AuthService
+	passwordService PasswordService
 }
 
-func defaultOpts(userRepository UserRepository) Opts {
+func defaultOpts(userRepository UserRepository, authService AuthService, passwordService PasswordService) Opts {
 	return Opts{
-		userRepository: userRepository,
-	}
-}
-
-func WithConfig(cfg *config.Config) OptFunc {
-	return func(opts *Opts) {
-		opts.cfg = cfg
+		userRepository:  userRepository,
+		authService:     authService,
+		passwordService: passwordService,
 	}
 }

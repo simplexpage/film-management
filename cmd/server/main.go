@@ -5,12 +5,17 @@ import (
 	"film-management/cmd/server/commands/migrate"
 	"film-management/config"
 	httpCommonHandler "film-management/internal/common/transport/http"
-	"film-management/internal/user/domain"
-	"film-management/internal/user/endpoints"
+	domainFilm "film-management/internal/film/domain"
+	filmEndpoint "film-management/internal/film/endpoints"
+	httpFilmHandler "film-management/internal/film/transport/http"
+	domainUser "film-management/internal/user/domain"
+	userEndpoint "film-management/internal/user/endpoints"
 	httpUserHandler "film-management/internal/user/transport/http"
 	"film-management/pkg/database/postgresql"
 	"film-management/pkg/logger"
-	userRepo "film-management/repositories/storage/postgres"
+	"film-management/pkg/transport/http/response"
+	"film-management/repositories/services"
+	filmRepo "film-management/repositories/storage/postgres"
 	"flag"
 	"fmt"
 	"github.com/oklog/oklog/pkg/group"
@@ -58,31 +63,46 @@ func main() {
 	// Init opts for services and repositories
 	var (
 		// Init opts for user service
-		optsForUser []domain.OptFunc
+		optsForUser []domainUser.OptFunc
+		// Init opts for film service
+		optsForFilm []domainFilm.OptFunc
 	)
-
-	// Add config to params
-	optsForUser = append(optsForUser, domain.WithConfig(cfg))
 
 	// Init Repositories
 	var (
 		// User repository
-		userRepository = userRepo.NewUserRepository(postgresClientDB, log)
+		userRepository = filmRepo.NewUserRepository(postgresClientDB, log)
+		// Film repository
+		filmRepository = filmRepo.NewFilmRepository(postgresClientDB, log)
+		// Password service
+		passwordService = services.NewPasswordService(log)
+		// Auth service
+		authService = services.NewAuthService(cfg.Services.Auth, log)
 	)
 
 	// Init services
 	//
 	// User service
-	var userService domain.Service
+	var userService domainUser.Service
 	{
-		userService = domain.NewService(userRepository, optsForUser...)
-		userService = domain.NewLoggingMiddleware(log)(userService)
+		userService = domainUser.NewService(userRepository, authService, passwordService, optsForUser...)
+		userService = domainUser.NewLoggingMiddleware(log)(userService)
+	}
+
+	// Film service
+	var filmService domainFilm.Service
+	{
+		filmService = domainFilm.NewService(filmRepository, optsForFilm...)
+		filmService = domainFilm.NewLoggingMiddleware(log)(filmService)
 	}
 
 	// Init endpoints
-	//
-	// User endpoints
-	userEndpoints := endpoints.NewEndpoints(userService, log)
+	var (
+		// User endpoints
+		userEndpoints = userEndpoint.NewEndpoints(userService, log)
+		// Film endpoints
+		filmEndpoints = filmEndpoint.NewEndpoints(filmService, log)
+	)
 
 	// Init http handlers
 	var httpHandlers *http.ServeMux
@@ -92,6 +112,10 @@ func main() {
 		httpHandlers.Handle(httpCommonHandler.APIPath, httpCommonHandler.NewHTTPHandlers(cfg, log))
 		// User handlers
 		httpHandlers.Handle(httpUserHandler.APIPath, httpUserHandler.NewHTTPHandlers(userEndpoints, cfg, log))
+		// Film handlers
+		httpHandlers.Handle(httpFilmHandler.APIPath, httpFilmHandler.NewHTTPHandlers(filmEndpoints, authService, cfg, log))
+		// Base 404 handler
+		httpHandlers.HandleFunc("/", response.NotFoundFunc)
 	}
 
 	// Init group

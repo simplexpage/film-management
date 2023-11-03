@@ -30,7 +30,7 @@ func TestAuthMiddleware(t *testing.T) {
 	var (
 		logger            = zap.NewNop()
 		notAuthURLs       = []string{"/public", "/login"}
-		pathPublicKeyFile = cfg.HTTP.PathPublicKeyFile
+		pathPublicKeyFile = cfg.Services.User.PathPublicKeyFile
 		authTokenForTest  = cfg.HTTP.AuthTokenForTest
 	)
 

@@ -2,6 +2,7 @@ package migrate
 
 import (
 	"errors"
+	modelsFilm "film-management/internal/film/domain/models"
 	"film-management/internal/user/domain/models"
 	"film-management/pkg/database/postgresql"
 	"go.uber.org/zap"
@@ -23,7 +24,7 @@ func PostgresDatabase(sc *postgresql.Config, logger *zap.Logger) error {
 		return ErrConnectFilmDB
 	}
 
-	err := clientDB.AutoMigrate(&models.User{})
+	err := clientDB.AutoMigrate(&models.User{}, &modelsFilm.Film{})
 
 	if err != nil {
 		logger.Error("Error migrate p2p database", zap.Error(err))

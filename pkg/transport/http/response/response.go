@@ -7,6 +7,7 @@ import (
 	"film-management/pkg/validation"
 	endpointKit "github.com/go-kit/kit/endpoint"
 	"github.com/go-playground/validator/v10"
+	"github.com/gorilla/mux"
 	jsoniter "github.com/json-iterator/go"
 	"net/http"
 )
@@ -62,6 +63,11 @@ func EncodeError(ctx context.Context, code int, err error, w http.ResponseWriter
 		encodeValidation(ctx, validationErr, w)
 
 		return
+	}
+
+	// Check if error is NotFoundError
+	if errors.As(err, &validation.NotFoundError{}) {
+		code = http.StatusNotFound
 	}
 
 	// Set Content-Type header
@@ -143,7 +149,49 @@ func errorToCodeHTTPAnswer(err error) int {
 		errors.Is(err, transportHttp.ErrContextUserID) ||
 		errors.Is(err, transportHttp.ErrJSONDecode):
 		return http.StatusBadRequest
+	case errors.Is(err, transportHttp.ErrNotFound):
+		return http.StatusNotFound
 	default:
 		return http.StatusInternalServerError
+	}
+}
+
+// SetErrorHandlers is the default error handler. It encodes errors to the HTTP response.
+func SetErrorHandlers(r *mux.Router) {
+	r.NotFoundHandler = http.HandlerFunc(NotFoundFunc)
+	r.MethodNotAllowedHandler = http.HandlerFunc(MethodNotAllowedFunc)
+}
+
+// NotFoundFunc is the default error handler. It encodes errors to the HTTP response.
+func NotFoundFunc(w http.ResponseWriter, r *http.Request) {
+	// Set Content-Type header
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(http.StatusNotFound)
+
+	// Error response
+	data := ErrorResponse{
+		Code:    http.StatusNotFound,
+		Message: transportHttp.ErrSystemActionNotFound.Error(),
+	}
+
+	if errEncode := jsoniter.NewEncoder(w).Encode(data); errEncode != nil {
+		return
+	}
+}
+
+// MethodNotAllowedFunc is the default error handler. It encodes errors to the HTTP response.
+func MethodNotAllowedFunc(w http.ResponseWriter, r *http.Request) {
+	// Set Content-Type header
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(http.StatusMethodNotAllowed)
+
+	// Error response
+	data := ErrorResponse{
+		Code:    http.StatusMethodNotAllowed,
+		Message: transportHttp.ErrSystemActionMethodNotAllowed.Error(),
+	}
+
+	if errEncode := jsoniter.NewEncoder(w).Encode(data); errEncode != nil {
+		return
 	}
 }

@@ -3,6 +3,7 @@ package http
 import (
 	"film-management/config"
 	"film-management/pkg/transport/http/middlewares"
+	"film-management/pkg/transport/http/response"
 	"github.com/gorilla/mux"
 	httpSwagger "github.com/swaggo/http-swagger"
 	"go.uber.org/zap"
@@ -46,6 +47,8 @@ func NewHTTPHandlers(cfg *config.Config, logger *zap.Logger) http.Handler {
 	r.HandleFunc(HealthCheckPath, HealthCheckHandler)
 	// Swagger
 	r.PathPrefix(SwaggerPath).Handler(httpSwagger.WrapHandler)
+	// Not found handler
+	r.NotFoundHandler = http.HandlerFunc(response.NotFoundFunc)
 
 	return r
 }

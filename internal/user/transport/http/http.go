@@ -56,18 +56,16 @@ func NewHTTPHandlers(endpoints endpoints.SetEndpoints, cfg *config.Config, logge
 	// Recovery
 	r.Use(middlewares.RecoveryMiddleware(logger))
 
-	// AUTH
-	r.Use(middlewares.AuthMiddleware(cfg.HTTP.NotAuthUrls, cfg.Services.User.PathPublicKeyFile, logger))
-
 	// Routes
 
 	// User
 	//
 	// Register
 	r.Handle(RegisterPath, registerHandler).Methods(http.MethodPost, http.MethodOptions)
-
 	// Login
 	r.Handle(LoginPath, loginHandler).Methods(http.MethodPost, http.MethodOptions)
+	// Set custom error handlers
+	response.SetErrorHandlers(r)
 
 	return r
 }

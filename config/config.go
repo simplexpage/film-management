@@ -1,6 +1,7 @@
 package config
 
 import (
+	"film-management/pkg/auth"
 	"film-management/pkg/database/postgresql"
 	"film-management/pkg/logger"
 	"github.com/spf13/viper"
@@ -28,11 +29,7 @@ type Config struct {
 		Postgres postgresql.Config
 	}
 	Services struct {
-		User struct {
-			AuthDurationMin    time.Duration
-			PathPublicKeyFile  string
-			PathPrivateKeyFile string
-		}
+		Auth auth.Config
 	}
 }
 
@@ -79,13 +76,12 @@ func setDefaults(v *viper.Viper) {
 		"/api/v1/swagger",
 		"/api/v1/user/register",
 		"/api/v1/user/login",
-		"/api/v1/user/refresh-token",
 	})
 	// Services
 	// User
-	v.SetDefault("services.user.authDurationMin", 60*24)
-	v.SetDefault("services.user.pathPublicKeyFile", "config/ssl/jwtRS256.key.pub")
-	v.SetDefault("services.user.pathPrivateKeyFile", "config/ssl/jwtRS256.key")
+	v.SetDefault("services.auth.authDurationMin", 60)
+	v.SetDefault("services.auth.pathPublicKeyFile", "config/ssl/jwtRS256.key.pub")
+	v.SetDefault("services.auth.pathPrivateKeyFile", "config/ssl/jwtRS256.key")
 	// Storage
 	v.SetDefault("storage.postgres.host", "db_film_management")
 	v.SetDefault("storage.postgres.port", 5432)

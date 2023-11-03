@@ -16,6 +16,410 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/api/v1/film/add": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Add a film",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Film"
+                ],
+                "summary": "Add a film",
+                "parameters": [
+                    {
+                        "description": "Add Film Form",
+                        "name": "form",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/endpoints.AddFilmRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.SuccessResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/endpoints.AddFilmResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "422": {
+                        "description": "Data Validation Failed",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponseValidation"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/film/delete/{uuid}": {
+            "delete": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Delete a film",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Film"
+                ],
+                "summary": "Delete a film",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Film UUID",
+                        "name": "uuid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.SuccessResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/endpoints.DeleteFilmResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "422": {
+                        "description": "Data Validation Failed",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponseValidation"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/film/update/{uuid}": {
+            "put": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Update a film",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Film"
+                ],
+                "summary": "Update a film",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Film UUID",
+                        "name": "uuid",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Update film form",
+                        "name": "form",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/endpoints.UpdateFilmRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.SuccessResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/endpoints.UpdateFilmResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "422": {
+                        "description": "Data Validation Failed",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponseValidation"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/film/view-all": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "View all films",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Film"
+                ],
+                "summary": "View all films",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "example": "Title",
+                        "description": "title",
+                        "name": "title",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "example": "2023-12-11 or 2023-10-11:2023-12-11",
+                        "description": "date",
+                        "name": "release_date",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "example": "title.asc, title.desc, release_date.asc, release_date.desc",
+                        "description": "sort",
+                        "name": "sort",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "example": "10",
+                        "description": "limit",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "example": "1",
+                        "description": "offset",
+                        "name": "offset",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.SuccessResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/endpoints.ViewAllFilmsResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/film/view/{uuid}": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "View a film",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Film"
+                ],
+                "summary": "View a film",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Film UUID",
+                        "name": "uuid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.SuccessResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/endpoints.ViewFilmResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/health": {
             "get": {
                 "description": "Health Check",
@@ -169,6 +573,137 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "endpoints.AddFilmRequest": {
+            "type": "object",
+            "required": [
+                "cast",
+                "director",
+                "genre",
+                "releaseDate",
+                "synopsis",
+                "title"
+            ],
+            "properties": {
+                "cast": {
+                    "type": "string",
+                    "example": "John Doe, Jane Doe, Foo Bar, Baz Quux"
+                },
+                "director": {
+                    "type": "string",
+                    "maxLength": 40,
+                    "minLength": 3,
+                    "example": "John Doe"
+                },
+                "genre": {
+                    "type": "string",
+                    "enum": [
+                        "action",
+                        "comedy"
+                    ],
+                    "example": "action"
+                },
+                "releaseDate": {
+                    "type": "string",
+                    "example": "2021-01-01"
+                },
+                "synopsis": {
+                    "type": "string",
+                    "maxLength": 1000,
+                    "minLength": 10,
+                    "example": "This is a synopsis."
+                },
+                "title": {
+                    "type": "string",
+                    "maxLength": 40,
+                    "minLength": 3,
+                    "example": "Garry Potter"
+                }
+            }
+        },
+        "endpoints.AddFilmResponse": {
+            "type": "object"
+        },
+        "endpoints.DeleteFilmResponse": {
+            "type": "object"
+        },
+        "endpoints.ItemAllFilms": {
+            "type": "object",
+            "properties": {
+                "cast": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "director": {
+                    "type": "string"
+                },
+                "genre": {
+                    "type": "string"
+                },
+                "release_date": {
+                    "type": "string"
+                },
+                "synopsis": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "uuid": {
+                    "type": "string"
+                }
+            }
+        },
+        "endpoints.ItemCreator": {
+            "type": "object",
+            "properties": {
+                "username": {
+                    "type": "string"
+                },
+                "uuid": {
+                    "type": "string"
+                }
+            }
+        },
+        "endpoints.ItemFilm": {
+            "type": "object",
+            "properties": {
+                "cast": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "creator": {
+                    "$ref": "#/definitions/endpoints.ItemCreator"
+                },
+                "director": {
+                    "type": "string"
+                },
+                "genre": {
+                    "type": "string"
+                },
+                "release_date": {
+                    "type": "string"
+                },
+                "synopsis": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "uuid": {
+                    "type": "string"
+                }
+            }
+        },
         "endpoints.LoginRequest": {
             "type": "object",
             "required": [
@@ -222,12 +757,105 @@ const docTemplate = `{
         "endpoints.RegisterResponse": {
             "type": "object"
         },
+        "endpoints.UpdateFilmRequest": {
+            "type": "object",
+            "required": [
+                "cast",
+                "director",
+                "genre",
+                "releaseDate",
+                "synopsis",
+                "title"
+            ],
+            "properties": {
+                "cast": {
+                    "type": "string",
+                    "example": "John Doe, Jane Doe, Foo Bar, Baz Quux"
+                },
+                "director": {
+                    "type": "string",
+                    "maxLength": 40,
+                    "minLength": 3,
+                    "example": "John Doe"
+                },
+                "genre": {
+                    "type": "string",
+                    "enum": [
+                        "action",
+                        "comedy"
+                    ],
+                    "example": "action"
+                },
+                "releaseDate": {
+                    "type": "string",
+                    "example": "2021-01-01"
+                },
+                "synopsis": {
+                    "type": "string",
+                    "maxLength": 1000,
+                    "minLength": 10,
+                    "example": "This is a synopsis."
+                },
+                "title": {
+                    "type": "string",
+                    "maxLength": 40,
+                    "minLength": 3,
+                    "example": "Garry Potter"
+                }
+            }
+        },
+        "endpoints.UpdateFilmResponse": {
+            "type": "object"
+        },
+        "endpoints.ViewAllFilmsResponse": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/endpoints.ItemAllFilms"
+                    }
+                },
+                "pagination": {
+                    "$ref": "#/definitions/pagination.Pagination"
+                }
+            }
+        },
+        "endpoints.ViewFilmResponse": {
+            "type": "object",
+            "properties": {
+                "item": {
+                    "$ref": "#/definitions/endpoints.ItemFilm"
+                }
+            }
+        },
         "http.HealthCheckResponse": {
             "type": "object",
             "properties": {
                 "alive": {
                     "type": "boolean",
                     "example": true
+                }
+            }
+        },
+        "pagination.Pagination": {
+            "type": "object",
+            "properties": {
+                "page": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "page_size": {
+                    "type": "integer",
+                    "example": 20
+                },
+                "total_count": {
+                    "type": "integer",
+                    "example": 200
+                },
+                "total_pages": {
+                    "type": "integer",
+                    "example": 10
                 }
             }
         },
