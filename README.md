@@ -10,15 +10,27 @@
 │   │   └── main.go - entry point for launch project
 │   └── tmp - temporary folder for local development
 ├── config - config files
+│   ├── ssl - ssl certificates
 │   └── config.yaml.example - example config file
 ├── docs - documentation for swagger
 ├── internal
 │   ├── common - common service
 │   ├── film - film service
+│   │    ├── domain - film domain
+│   │    ├── endpoints - film endpoints
+│   │    └── transport - film transport
+│   │       └── http - http transport
 │   └── user - user service
+│       ├── domain - user domain
+│       ├── endpoints - user endpoints
+│       └── transport - user transport
+│           └── http - http transport
 ├── pkg - common packages for project
 ├── repositories - external repositories like postgreDB, redis, etc.
+│   ├── services - auth and password services and any other services
+│   └── storage - storage repositories
 ├── Dockerfile - dockerfile for local project
+├── Makefile - makefile for local project
 └── .env.example - example .env file
 ```
 
@@ -50,6 +62,21 @@ Run `make start_local` to start REST API. All containers will start automaticall
 
 Run `make migrate_local` in another console to apply Postgres db migrations for film-management service.
 
+## Run tests
+
+### 1. Create a new config file for tests
+
+Copy example config file from /config/test/config.yaml.example in /config/test/config.yaml
+
+### 2. Run command
+
+Run `make test` to run tests inside GO container.
+
 ## Swagger for REST API
 
 http://localhost:8088/api/v1/film/swagger/index.html
+
+## Database
+
+### Postgresql schema
+https://dbdiagram.io/d/
