@@ -6,7 +6,6 @@ import (
 	httpCommon "film-management/internal/common/transport/http"
 	"film-management/internal/film/endpoints"
 	"film-management/pkg/auth"
-	"film-management/pkg/query"
 	httpTransport "film-management/pkg/transport/http"
 	"film-management/pkg/transport/http/middlewares"
 	"film-management/pkg/transport/http/response"
@@ -15,17 +14,11 @@ import (
 	jsoniter "github.com/json-iterator/go"
 	"go.uber.org/zap"
 	"net/http"
-	"time"
+	"strings"
 )
 
 const (
-	APIPath = httpCommon.APIPath + "film/"
-
-	AddFilmPath      = APIPath + "add"
-	UpdateFilmPath   = APIPath + "update/{uuid}"
-	ViewFilmPath     = APIPath + "view/{uuid}"
-	ViewAllFilmsPath = APIPath + "view-all"
-	DeleteFilmPath   = APIPath + "delete/{uuid}"
+	APIPath = httpCommon.APIPath + "films/"
 )
 
 // NewHTTPHandlers is a function that returns a http.Handler that makes a set of endpoints available on predefined paths.
@@ -89,15 +82,15 @@ func NewHTTPHandlers(endpoints endpoints.SetEndpoints, authService middlewares.A
 	// Film
 	//
 	// Add a film
-	r.Handle(AddFilmPath, addAdHandler).Methods(http.MethodPost, http.MethodOptions)
+	r.Handle(APIPath, addAdHandler).Methods(http.MethodPost)
 	// Update a film
-	r.Handle(UpdateFilmPath, updateAdHandler).Methods(http.MethodPut, http.MethodOptions)
+	r.Handle(APIPath+"{id}", updateAdHandler).Methods(http.MethodPut)
 	// View a film
-	r.Handle(ViewFilmPath, viewAdHandler).Methods(http.MethodGet, http.MethodOptions)
+	r.Handle(APIPath+"{id}", viewAdHandler).Methods(http.MethodGet)
 	// View all films
-	r.Handle(ViewAllFilmsPath, viewAllFilmsHandler).Methods(http.MethodGet, http.MethodOptions)
+	r.Handle(APIPath, viewAllFilmsHandler).Methods(http.MethodGet)
 	// Delete a film
-	r.Handle(DeleteFilmPath, deleteAdHandler).Methods(http.MethodDelete, http.MethodOptions)
+	r.Handle(APIPath+"{id}", deleteAdHandler).Methods(http.MethodDelete)
 
 	// Set custom error handlers
 	response.SetErrorHandlers(r)
@@ -118,7 +111,7 @@ func NewHTTPHandlers(endpoints endpoints.SetEndpoints, authService middlewares.A
 // @Failure 401 {object} response.ErrorResponse "Unauthorized"
 // @Failure 422 {object} response.ErrorResponseValidation "Data Validation Failed"
 // @Failure 500 {object} response.ErrorResponse "Internal Server Error"
-// @Router /api/v1/film/add [post] .
+// @Router /api/v1/films/ [post] .
 func decodeHTTPAddFilmRequest(_ context.Context, r *http.Request) (request interface{}, err error) {
 	var reqForm endpoints.AddFilmRequest
 
@@ -153,12 +146,12 @@ func decodeHTTPAddFilmRequest(_ context.Context, r *http.Request) (request inter
 // @Failure 401 {object} response.ErrorResponse "Unauthorized"
 // @Failure 422 {object} response.ErrorResponseValidation "Data Validation Failed"
 // @Failure 500 {object} response.ErrorResponse "Internal Server Error"
-// @Router /api/v1/film/update/{uuid} [put] .
+// @Router /api/v1/films/{id} [put] .
 func decodeHTTPUpdateFilmRequest(_ context.Context, r *http.Request) (request interface{}, err error) {
 	var reqForm endpoints.UpdateFilmRequest
 
 	// Get UUID from path
-	uuidFromPath, err := httpTransport.GetValueFromPath(r, "uuid")
+	uuidFromPath, err := httpTransport.GetValueFromPath(r, "id")
 	if err != nil {
 		return nil, err
 	}
@@ -194,10 +187,10 @@ func decodeHTTPUpdateFilmRequest(_ context.Context, r *http.Request) (request in
 // @Failure 401 {object} response.ErrorResponse "Unauthorized"
 // @Failure 404 {object} response.ErrorResponse "Not Found"
 // @Failure 500 {object} response.ErrorResponse "Internal Server Error"
-// @Router /api/v1/film/view/{uuid} [get] .
+// @Router /api/v1/films/{id} [get] .
 func decodeHTTPViewFilmRequest(_ context.Context, r *http.Request) (request interface{}, err error) {
 	// Get UUID from path
-	uuidFromPath, err := httpTransport.GetValueFromPath(r, "uuid")
+	uuidFromPath, err := httpTransport.GetValueFromPath(r, "id")
 	if err != nil {
 		return nil, err
 	}
@@ -212,29 +205,43 @@ func decodeHTTPViewFilmRequest(_ context.Context, r *http.Request) (request inte
 // @Security ApiKeyAuth
 // @Accept  json
 // @Produce  json
-// @Param title query string false "title" example(Title)
+// @Param title query string false "title" example(Star Wars)
 // @Param release_date query string false "date" example(2023-12-11 or 2023-10-11:2023-12-11)
-// @Param sort query string false "sort" example(title.asc, title.desc, release_date.asc, release_date.desc)
+// @Param genres query string false "genres" example(action,adventure)
+// @Param sort query string false "sort" example(title.asc or title.desc or release_date.asc or release_date.desc)
 // @Param limit query string false "limit" example(10)
 // @Param offset query string false "offset" example(1)
 // @Success 200 {object} response.SuccessResponse{data=endpoints.ViewAllFilmsResponse} "Success"
 // @Failure 400 {object} response.ErrorResponse	"Bad Request"
 // @Failure 401 {object} response.ErrorResponse "Unauthorized"
+// @Failure 422 {object} response.ErrorResponseValidation "Data Validation Failed"
 // @Failure 500 {object} response.ErrorResponse "Internal Server Error"
-// @Router /api/v1/film/view-all [get] .
+// @Router /api/v1/films/ [get] .
 func decodeHTTPViewAllFilmsRequest(_ context.Context, r *http.Request) (request interface{}, err error) {
-	filterSortLimit, err := query.NewFilterSortLimitFromHTTPRequest(r, FilmAvailableFilterFields{}, "release_date.desc")
-	if err != nil {
+	var req endpoints.ViewAllFilmsRequest
+
+	// Get sort from HTTP request
+	req.Sort = r.URL.Query().Get("sort")
+
+	// Get limit from HTTP request
+	if err := httpTransport.GetIntParamFromHTTPRequest("limit", r, &req.Limit); err != nil {
 		return nil, err
 	}
 
-	return endpoints.ViewAllFilmsRequest{FilterSortLimit: filterSortLimit}, nil
-}
+	// Get offset from HTTP request
+	if err := httpTransport.GetIntParamFromHTTPRequest("offset", r, &req.Offset); err != nil {
+		return nil, err
+	}
 
-// FilmAvailableFilterFields is a struct that contains available fields for filtering.
-type FilmAvailableFilterFields struct {
-	Title       string    `json:"title"`
-	ReleaseDate time.Time `json:"release_date"`
+	// Get filters from HTTP request
+	req.Title = r.URL.Query().Get("title")
+	req.ReleaseDate = r.URL.Query().Get("release_date")
+
+	if genres := r.URL.Query().Get("genres"); genres != "" {
+		req.Genres = strings.Split(genres, ",")
+	}
+
+	return req, nil
 }
 
 // DeleteFilm godoc
@@ -251,10 +258,10 @@ type FilmAvailableFilterFields struct {
 // @Failure 404 {object} response.ErrorResponse "Not Found"
 // @Failure 422 {object} response.ErrorResponseValidation "Data Validation Failed"
 // @Failure 500 {object} response.ErrorResponse "Internal Server Error"
-// @Router /api/v1/film/delete/{uuid} [delete] .
+// @Router /api/v1/films/{id} [delete] .
 func decodeHTTPDeleteFilmRequest(_ context.Context, r *http.Request) (request interface{}, err error) {
 	// Get UUID from path
-	uuidFromPath, err := httpTransport.GetValueFromPath(r, "uuid")
+	uuidFromPath, err := httpTransport.GetValueFromPath(r, "id")
 	if err != nil {
 		return nil, err
 	}

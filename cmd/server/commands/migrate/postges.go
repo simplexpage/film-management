@@ -24,7 +24,7 @@ func PostgresDatabase(sc *postgresql.Config, logger *zap.Logger) error {
 		return ErrConnectFilmDB
 	}
 
-	err := clientDB.AutoMigrate(&models.User{}, &modelsFilm.Film{})
+	err := clientDB.AutoMigrate(&models.User{}, &modelsFilm.Film{}, &modelsFilm.Genre{})
 
 	if err != nil {
 		logger.Error("Error migrate p2p database", zap.Error(err))

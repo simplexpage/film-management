@@ -10,12 +10,16 @@ definitions:
         maxLength: 40
         minLength: 3
         type: string
-      genre:
-        enum:
+      genres:
+        example:
         - action
-        - comedy
-        example: action
-        type: string
+        - adventure
+        - sci-fi
+        items:
+          type: string
+        maxItems: 5
+        minItems: 1
+        type: array
       releaseDate:
         example: "2021-01-01"
         type: string
@@ -26,13 +30,13 @@ definitions:
         type: string
       title:
         example: Garry Potter
-        maxLength: 40
+        maxLength: 100
         minLength: 3
         type: string
     required:
     - cast
     - director
-    - genre
+    - genres
     - releaseDate
     - synopsis
     - title
@@ -49,8 +53,10 @@ definitions:
         type: string
       director:
         type: string
-      genre:
-        type: string
+      genres:
+        items:
+          type: string
+        type: array
       release_date:
         type: string
       synopsis:
@@ -78,8 +84,6 @@ definitions:
       creator:
         $ref: '#/definitions/endpoints.ItemCreator'
       director:
-        type: string
-      genre:
         type: string
       release_date:
         type: string
@@ -141,12 +145,6 @@ definitions:
         maxLength: 40
         minLength: 3
         type: string
-      genre:
-        enum:
-        - action
-        - comedy
-        example: action
-        type: string
       releaseDate:
         example: "2021-01-01"
         type: string
@@ -157,13 +155,12 @@ definitions:
         type: string
       title:
         example: Garry Potter
-        maxLength: 40
+        maxLength: 100
         minLength: 3
         type: string
     required:
     - cast
     - director
-    - genre
     - releaseDate
     - synopsis
     - title
@@ -243,7 +240,75 @@ info:
   title: Film management service API
   version: "1.0"
 paths:
-  /api/v1/film/add:
+  /api/v1/films/:
+    get:
+      consumes:
+      - application/json
+      description: View all films
+      parameters:
+      - description: title
+        example: Star Wars
+        in: query
+        name: title
+        type: string
+      - description: date
+        example: 2023-12-11 or 2023-10-11:2023-12-11
+        in: query
+        name: release_date
+        type: string
+      - description: genres
+        example: action,adventure
+        in: query
+        name: genres
+        type: string
+      - description: sort
+        example: title.asc or title.desc or release_date.asc or release_date.desc
+        in: query
+        name: sort
+        type: string
+      - description: limit
+        example: "10"
+        in: query
+        name: limit
+        type: string
+      - description: offset
+        example: "1"
+        in: query
+        name: offset
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/endpoints.ViewAllFilmsResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "422":
+          description: Data Validation Failed
+          schema:
+            $ref: '#/definitions/response.ErrorResponseValidation'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: View all films
+      tags:
+      - Film
     post:
       consumes:
       - application/json
@@ -288,7 +353,7 @@ paths:
       summary: Add a film
       tags:
       - Film
-  /api/v1/film/delete/{uuid}:
+  /api/v1/films/{id}:
     delete:
       consumes:
       - application/json
@@ -336,7 +401,49 @@ paths:
       summary: Delete a film
       tags:
       - Film
-  /api/v1/film/update/{uuid}:
+    get:
+      consumes:
+      - application/json
+      description: View a film
+      parameters:
+      - description: Film UUID
+        in: path
+        name: uuid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/endpoints.ViewFilmResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: View a film
+      tags:
+      - Film
     put:
       consumes:
       - application/json
@@ -384,110 +491,6 @@ paths:
       security:
       - ApiKeyAuth: []
       summary: Update a film
-      tags:
-      - Film
-  /api/v1/film/view-all:
-    get:
-      consumes:
-      - application/json
-      description: View all films
-      parameters:
-      - description: title
-        example: Title
-        in: query
-        name: title
-        type: string
-      - description: date
-        example: 2023-12-11 or 2023-10-11:2023-12-11
-        in: query
-        name: release_date
-        type: string
-      - description: sort
-        example: title.asc, title.desc, release_date.asc, release_date.desc
-        in: query
-        name: sort
-        type: string
-      - description: limit
-        example: "10"
-        in: query
-        name: limit
-        type: string
-      - description: offset
-        example: "1"
-        in: query
-        name: offset
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Success
-          schema:
-            allOf:
-            - $ref: '#/definitions/response.SuccessResponse'
-            - properties:
-                data:
-                  $ref: '#/definitions/endpoints.ViewAllFilmsResponse'
-              type: object
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/response.ErrorResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/response.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/response.ErrorResponse'
-      security:
-      - ApiKeyAuth: []
-      summary: View all films
-      tags:
-      - Film
-  /api/v1/film/view/{uuid}:
-    get:
-      consumes:
-      - application/json
-      description: View a film
-      parameters:
-      - description: Film UUID
-        in: path
-        name: uuid
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Success
-          schema:
-            allOf:
-            - $ref: '#/definitions/response.SuccessResponse'
-            - properties:
-                data:
-                  $ref: '#/definitions/endpoints.ViewFilmResponse'
-              type: object
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/response.ErrorResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/response.ErrorResponse'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/response.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/response.ErrorResponse'
-      security:
-      - ApiKeyAuth: []
-      summary: View a film
       tags:
       - Film
   /health:

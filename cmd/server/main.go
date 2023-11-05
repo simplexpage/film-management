@@ -15,7 +15,8 @@ import (
 	"film-management/pkg/logger"
 	"film-management/pkg/transport/http/response"
 	"film-management/repositories/services"
-	filmRepo "film-management/repositories/storage/postgres"
+	filmRepo "film-management/repositories/storage/postgres/film"
+	userRepo "film-management/repositories/storage/postgres/user"
 	"flag"
 	"fmt"
 	"github.com/oklog/oklog/pkg/group"
@@ -71,9 +72,9 @@ func main() {
 	// Init Repositories
 	var (
 		// User repository
-		userRepository = filmRepo.NewUserRepository(postgresClientDB, log)
+		userRepository = userRepo.NewUserRepository(postgresClientDB, log)
 		// Film repository
-		filmRepository = filmRepo.NewFilmRepository(postgresClientDB, log)
+		filmRepository = filmRepo.NewRepository(postgresClientDB, log)
 		// Password service
 		passwordService = services.NewPasswordService(log)
 		// Auth service

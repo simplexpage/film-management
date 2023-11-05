@@ -16,7 +16,113 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/api/v1/film/add": {
+        "/api/v1/films/": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "View all films",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Film"
+                ],
+                "summary": "View all films",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "example": "Star Wars",
+                        "description": "title",
+                        "name": "title",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "example": "2023-12-11 or 2023-10-11:2023-12-11",
+                        "description": "date",
+                        "name": "release_date",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "example": "action,adventure",
+                        "description": "genres",
+                        "name": "genres",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "example": "title.asc or title.desc or release_date.asc or release_date.desc",
+                        "description": "sort",
+                        "name": "sort",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "example": "10",
+                        "description": "limit",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "example": "1",
+                        "description": "offset",
+                        "name": "offset",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.SuccessResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/endpoints.ViewAllFilmsResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "422": {
+                        "description": "Data Validation Failed",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponseValidation"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            },
             "post": {
                 "security": [
                     {
@@ -91,14 +197,14 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/film/delete/{uuid}": {
-            "delete": {
+        "/api/v1/films/{id}": {
+            "get": {
                 "security": [
                     {
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Delete a film",
+                "description": "View a film",
                 "consumes": [
                     "application/json"
                 ],
@@ -108,7 +214,7 @@ const docTemplate = `{
                 "tags": [
                     "Film"
                 ],
-                "summary": "Delete a film",
+                "summary": "View a film",
                 "parameters": [
                     {
                         "type": "string",
@@ -130,7 +236,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/endpoints.DeleteFilmResponse"
+                                            "$ref": "#/definitions/endpoints.ViewFilmResponse"
                                         }
                                     }
                                 }
@@ -155,12 +261,6 @@ const docTemplate = `{
                             "$ref": "#/definitions/response.ErrorResponse"
                         }
                     },
-                    "422": {
-                        "description": "Data Validation Failed",
-                        "schema": {
-                            "$ref": "#/definitions/response.ErrorResponseValidation"
-                        }
-                    },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
@@ -168,9 +268,7 @@ const docTemplate = `{
                         }
                     }
                 }
-            }
-        },
-        "/api/v1/film/update/{uuid}": {
+            },
             "put": {
                 "security": [
                     {
@@ -250,16 +348,14 @@ const docTemplate = `{
                         }
                     }
                 }
-            }
-        },
-        "/api/v1/film/view-all": {
-            "get": {
+            },
+            "delete": {
                 "security": [
                     {
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "View all films",
+                "description": "Delete a film",
                 "consumes": [
                     "application/json"
                 ],
@@ -269,102 +365,7 @@ const docTemplate = `{
                 "tags": [
                     "Film"
                 ],
-                "summary": "View all films",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "example": "Title",
-                        "description": "title",
-                        "name": "title",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "example": "2023-12-11 or 2023-10-11:2023-12-11",
-                        "description": "date",
-                        "name": "release_date",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "example": "title.asc, title.desc, release_date.asc, release_date.desc",
-                        "description": "sort",
-                        "name": "sort",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "example": "10",
-                        "description": "limit",
-                        "name": "limit",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "example": "1",
-                        "description": "offset",
-                        "name": "offset",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Success",
-                        "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/response.SuccessResponse"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "$ref": "#/definitions/endpoints.ViewAllFilmsResponse"
-                                        }
-                                    }
-                                }
-                            ]
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/response.ErrorResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/response.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/response.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/api/v1/film/view/{uuid}": {
-            "get": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "View a film",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Film"
-                ],
-                "summary": "View a film",
+                "summary": "Delete a film",
                 "parameters": [
                     {
                         "type": "string",
@@ -386,7 +387,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/endpoints.ViewFilmResponse"
+                                            "$ref": "#/definitions/endpoints.DeleteFilmResponse"
                                         }
                                     }
                                 }
@@ -409,6 +410,12 @@ const docTemplate = `{
                         "description": "Not Found",
                         "schema": {
                             "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "422": {
+                        "description": "Data Validation Failed",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponseValidation"
                         }
                     },
                     "500": {
@@ -578,7 +585,7 @@ const docTemplate = `{
             "required": [
                 "cast",
                 "director",
-                "genre",
+                "genres",
                 "releaseDate",
                 "synopsis",
                 "title"
@@ -594,13 +601,18 @@ const docTemplate = `{
                     "minLength": 3,
                     "example": "John Doe"
                 },
-                "genre": {
-                    "type": "string",
-                    "enum": [
+                "genres": {
+                    "type": "array",
+                    "maxItems": 5,
+                    "minItems": 1,
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
                         "action",
-                        "comedy"
-                    ],
-                    "example": "action"
+                        "adventure",
+                        "sci-fi"
+                    ]
                 },
                 "releaseDate": {
                     "type": "string",
@@ -614,7 +626,7 @@ const docTemplate = `{
                 },
                 "title": {
                     "type": "string",
-                    "maxLength": 40,
+                    "maxLength": 100,
                     "minLength": 3,
                     "example": "Garry Potter"
                 }
@@ -638,8 +650,11 @@ const docTemplate = `{
                 "director": {
                     "type": "string"
                 },
-                "genre": {
-                    "type": "string"
+                "genres": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 },
                 "release_date": {
                     "type": "string"
@@ -682,9 +697,6 @@ const docTemplate = `{
                     "$ref": "#/definitions/endpoints.ItemCreator"
                 },
                 "director": {
-                    "type": "string"
-                },
-                "genre": {
                     "type": "string"
                 },
                 "release_date": {
@@ -762,7 +774,6 @@ const docTemplate = `{
             "required": [
                 "cast",
                 "director",
-                "genre",
                 "releaseDate",
                 "synopsis",
                 "title"
@@ -778,14 +789,6 @@ const docTemplate = `{
                     "minLength": 3,
                     "example": "John Doe"
                 },
-                "genre": {
-                    "type": "string",
-                    "enum": [
-                        "action",
-                        "comedy"
-                    ],
-                    "example": "action"
-                },
                 "releaseDate": {
                     "type": "string",
                     "example": "2021-01-01"
@@ -798,7 +801,7 @@ const docTemplate = `{
                 },
                 "title": {
                     "type": "string",
-                    "maxLength": 40,
+                    "maxLength": 100,
                     "minLength": 3,
                     "example": "Garry Potter"
                 }

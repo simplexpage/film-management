@@ -3,11 +3,11 @@ package domain
 type OptFunc func(*Opts)
 
 type Opts struct {
-	filmRepository FilmRepository
+	repository Repository
 }
 
-func defaultOpts(filmRepository FilmRepository) Opts {
+func defaultOpts(Repository Repository) Opts {
 	return Opts{
-		filmRepository: filmRepository,
+		repository: Repository,
 	}
 }

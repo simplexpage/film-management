@@ -71,7 +71,6 @@ type ItemFilm struct {
 	Director    string      `json:"director"`
 	ReleaseDate string      `json:"release_date"`
 	Cast        string      `json:"cast"`
-	Genre       Genre       `json:"genre"`
 	Synopsis    string      `json:"synopsis"`
 	CreatedAt   string      `json:"created_at"`
 	UpdatedAt   string      `json:"updated_at"`
@@ -92,7 +91,6 @@ func domainFilmToItemFilm(item models.Film) ItemFilm {
 		Director:    item.Director,
 		ReleaseDate: item.ReleaseDate.Format(time.DateOnly),
 		Cast:        item.Cast,
-		Genre:       GenreFromEnum(item.Genre),
 		Synopsis:    item.Synopsis,
 		CreatedAt:   time.Unix(item.CreatedAt, 0).Format(time.DateTime),
 		UpdatedAt:   time.Unix(item.UpdatedAt, 0).Format(time.DateTime),

@@ -50,7 +50,6 @@ func MakeUpdateFilmEndpoint(s domain.Service) endpoint.Endpoint {
 			Director:    reqForm.Director,
 			ReleaseDate: parseDate,
 			Cast:        reqForm.Cast,
-			Genre:       GenreToEnum(reqForm.Genre),
 			Synopsis:    reqForm.Synopsis,
 		}
 
@@ -67,11 +66,10 @@ type UpdateFilmRequest struct {
 	UUID      string `json:"uuid" validate:"required,uuid4" swaggerignore:"true"`
 	CreatorID string `json:"creatorID" validate:"required,uuid4" swaggerignore:"true"`
 
-	Title       string `json:"title" validate:"required,min=3,max=40" example:"Garry Potter"`
+	Title       string `json:"title" validate:"required,min=3,max=100" example:"Garry Potter"`
 	Director    string `json:"director" validate:"required,min=3,max=40" example:"John Doe"`
 	ReleaseDate string `json:"releaseDate" validate:"required,customDate" example:"2021-01-01"`
 	Cast        string `json:"cast" validate:"required" example:"John Doe, Jane Doe, Foo Bar, Baz Quux"`
-	Genre       Genre  `json:"genre" validate:"required,oneof=action comedy" example:"action"`
 	Synopsis    string `json:"synopsis" validate:"required,min=10,max=1000" example:"This is a synopsis."`
 }
 

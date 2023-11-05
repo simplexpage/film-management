@@ -2,6 +2,7 @@ package sort
 
 import (
 	"errors"
+	"film-management/pkg/validation"
 	"fmt"
 	"strings"
 )
@@ -27,21 +28,22 @@ type Opts struct {
 	order string
 }
 
-func NewOption(sortField string, availableSortFields []string) (*Opts, error) {
+// newOptions returns a Sortable object
+func newOptions(sortField string, availableSortFields []string) (*Opts, error) {
 	splits := strings.Split(sortField, ".")
 
 	if len(splits) != 2 {
-		return nil, ErrMalformedSortQueryParameter
+		return nil, validation.CustomError{Field: "sort", Err: ErrMalformedSortQueryParameter}
 	}
 
 	field, order := splits[0], splits[1]
 
 	if order != OrderDESC && order != OrderASC {
-		return nil, ErrMalformedOrderDirection
+		return nil, validation.CustomError{Field: "sort", Err: ErrMalformedOrderDirection}
 	}
 
 	if !stringInSlice(availableSortFields, field) {
-		return nil, ErrUnknownField
+		return nil, validation.CustomError{Field: "sort", Err: ErrUnknownField}
 	}
 
 	return &Opts{
@@ -50,13 +52,17 @@ func NewOption(sortField string, availableSortFields []string) (*Opts, error) {
 	}, nil
 }
 
+// Field returns the field name
 func (o *Opts) Field() string {
 	return o.field
 }
+
+// Order returns the order direction in uppercase
 func (o *Opts) Order() string {
 	return o.order
 }
 
+// stringInSlice checks if a string is in a slice of strings
 func stringInSlice(strSlice []string, s string) bool {
 	for _, v := range strSlice {
 		if v == s {
@@ -65,6 +71,15 @@ func stringInSlice(strSlice []string, s string) bool {
 	}
 
 	return false
+}
+
+// GetSortOptions returns a Sortable object
+func GetSortOptions(sortField string, fields []string, sortByDefault string) (Sortable, error) {
+	if sortField == "" {
+		sortField = sortByDefault
+	}
+
+	return newOptions(sortField, fields)
 }
 
 // GetDBQueryForSort returns a string that can be used in a SQL query

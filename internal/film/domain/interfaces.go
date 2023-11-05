@@ -19,9 +19,15 @@ type Service interface {
 	DeleteFilm(ctx context.Context, filmID uuid.UUID, userID uuid.UUID) error
 }
 
-// FilmRepository is a repository for film.
+// Repository is a repository for domain service
 //
-//go:generate mockgen -source=interfaces.go -destination=mocks/mock_film_repository.go -package=mocks
+//go:generate mockgen -source=interfaces.go -destination=mocks/mock_repository.go -package=mocks
+type Repository interface {
+	FilmRepository
+	GenreRepository
+}
+
+// FilmRepository is a repository for film.
 type FilmRepository interface {
 	CreateFilm(ctx context.Context, model *models.Film) error
 	UpdateFilm(ctx context.Context, model *models.Film) error
@@ -30,4 +36,10 @@ type FilmRepository interface {
 	FindAllFilms(ctx context.Context, filterSortPagination query.FilterSortLimit) ([]models.Film, pagination.Pagination, error)
 	DeleteFilm(ctx context.Context, uuid uuid.UUID) error
 	FilmExistsWithTitle(ctx context.Context, title string) error
+}
+
+// GenreRepository is a repository for genre.
+type GenreRepository interface {
+	CreateGenre(ctx context.Context, model *models.Genre) (*models.Genre, error)
+	GetGenresByNames(ctx context.Context, names []string) ([]models.Genre, error)
 }

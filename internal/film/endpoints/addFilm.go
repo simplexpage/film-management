@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"github.com/go-kit/kit/endpoint"
 	"github.com/google/uuid"
+	"strings"
 	"time"
 )
 
@@ -36,6 +37,13 @@ func MakeAddFilmEndpoint(s domain.Service) endpoint.Endpoint {
 			return AddFilmResponse{Err: err}, nil
 		}
 
+		// Prepare genres
+		var genres []models.Genre
+		for _, genreName := range reqForm.Genres {
+			genre := models.Genre{Name: strings.ToLower(genreName)}
+			genres = append(genres, genre)
+		}
+
 		// Prepare a film model
 		model := &models.Film{
 			CreatorID:   parseCreatorUUID,
@@ -43,8 +51,8 @@ func MakeAddFilmEndpoint(s domain.Service) endpoint.Endpoint {
 			Director:    reqForm.Director,
 			ReleaseDate: parseDate,
 			Cast:        reqForm.Cast,
-			Genre:       GenreToEnum(reqForm.Genre),
 			Synopsis:    reqForm.Synopsis,
+			Genres:      genres,
 		}
 
 		// Add film
@@ -60,12 +68,12 @@ func MakeAddFilmEndpoint(s domain.Service) endpoint.Endpoint {
 type AddFilmRequest struct {
 	CreatorID string `json:"creatorID" validate:"required,uuid4" swaggerignore:"true"`
 
-	Title       string `json:"title" validate:"required,min=3,max=40" example:"Garry Potter"`
-	Director    string `json:"director" validate:"required,min=3,max=40" example:"John Doe"`
-	ReleaseDate string `json:"releaseDate" validate:"required,customDate" example:"2021-01-01"`
-	Cast        string `json:"cast" validate:"required" example:"John Doe, Jane Doe, Foo Bar, Baz Quux"`
-	Genre       Genre  `json:"genre" validate:"required,oneof=action comedy" example:"action"`
-	Synopsis    string `json:"synopsis" validate:"required,min=10,max=1000" example:"This is a synopsis."`
+	Title       string   `json:"title" validate:"required,min=3,max=100" example:"Garry Potter"`
+	Director    string   `json:"director" validate:"required,min=3,max=40" example:"John Doe"`
+	ReleaseDate string   `json:"releaseDate" validate:"required,customDate" example:"2021-01-01"`
+	Genres      []string `json:"genres" validate:"required,min=1,max=5,dive,min=3,max=100" example:"action,adventure,sci-fi"`
+	Cast        string   `json:"cast" validate:"required" example:"John Doe, Jane Doe, Foo Bar, Baz Quux"`
+	Synopsis    string   `json:"synopsis" validate:"required,min=10,max=1000" example:"This is a synopsis."`
 }
 
 // Validate is a method to validate form.
