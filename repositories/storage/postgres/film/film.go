@@ -30,7 +30,7 @@ func NewRepository(db *gorm.DB, logger *zap.Logger) *Repository {
 
 func (f Repository) CreateFilm(ctx context.Context, model *models.Film) error {
 	// Start a new transaction
-	tx := f.db.Begin()
+	tx := f.db.WithContext(ctx).Begin()
 
 	// Check if the director with the specified name exists
 	if err := f.createOrUpdateDirector(tx, model); err != nil {
@@ -44,6 +44,7 @@ func (f Repository) CreateFilm(ctx context.Context, model *models.Film) error {
 	if err := tx.Create(model).Error; err != nil {
 		// Rollback the transaction in case of an error
 		tx.Rollback()
+
 		return err
 	}
 
@@ -212,6 +213,7 @@ func addFilmFiltersToCondition(condition *gorm.DB, field string, value interface
 		genreNames, ok := value.([]string)
 		if !ok {
 			f.logger.Error("genres is not []string")
+
 			return
 		}
 		// Get genre IDs

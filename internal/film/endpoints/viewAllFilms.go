@@ -197,6 +197,7 @@ func getFilterOptions(reqForm ViewAllFilmsRequest) (query.Filter, error) {
 			if len(split) != 2 {
 				return nil, validation.CustomError{Field: "release_date", Err: fmt.Errorf("invalid date range format: %s", reqForm.ReleaseDate)}
 			}
+
 			myFilter["release_date"] = []string{split[0], split[1]}
 		} else {
 			myFilter["release_date"] = reqForm.ReleaseDate

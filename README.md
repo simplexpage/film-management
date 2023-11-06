@@ -62,13 +62,14 @@ Run `make start_local` to start REST API. All containers will start automaticall
 
 Run `make migrate_local` in another console to apply Postgres db migrations for film-management service.
 
+### 5. Run seed test data
+
+Run `make seed_data_local` in another console to apply Postgres db seed test data for film-management service.
+
+### 7. Stop a project
+Run `make stop_local` to stop REST API.
+
 ## Run tests
-
-### 1. Create a new config file for tests
-
-Copy example config file from /config/test/config.yaml.example in /config/test/config.yaml
-
-### 2. Run command
 
 Run `make test` to run tests inside GO container.
 

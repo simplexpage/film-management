@@ -163,7 +163,7 @@ func SetErrorHandlers(r *mux.Router) {
 }
 
 // NotFoundFunc is the default error handler. It encodes errors to the HTTP response.
-func NotFoundFunc(w http.ResponseWriter, r *http.Request) {
+func NotFoundFunc(w http.ResponseWriter, _ *http.Request) {
 	// Set Content-Type header
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(http.StatusNotFound)
@@ -180,7 +180,7 @@ func NotFoundFunc(w http.ResponseWriter, r *http.Request) {
 }
 
 // MethodNotAllowedFunc is the default error handler. It encodes errors to the HTTP response.
-func MethodNotAllowedFunc(w http.ResponseWriter, r *http.Request) {
+func MethodNotAllowedFunc(w http.ResponseWriter, _ *http.Request) {
 	// Set Content-Type header
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(http.StatusMethodNotAllowed)

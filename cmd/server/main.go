@@ -83,7 +83,7 @@ func main() {
 	// Init Repositories
 	var (
 		// User repository
-		userRepository = userRepo.NewUserRepository(postgresClientDB, log)
+		userRepository = userRepo.NewRepository(postgresClientDB, log)
 		// Film repository
 		filmRepository = filmRepo.NewRepository(postgresClientDB, log)
 		// Password service

@@ -22,6 +22,7 @@ func DateValidator(fl validator.FieldLevel) bool {
 	}
 
 	_, err := time.Parse("2006-01-02", date)
+
 	return err == nil
 }
 

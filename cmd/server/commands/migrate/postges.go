@@ -113,5 +113,6 @@ func SeedTestData(sc *postgresql.Config, logger *zap.Logger) error {
 	clientDB.Create(&films)
 
 	logger.Info("Test data seeded successfully")
+
 	return nil
 }

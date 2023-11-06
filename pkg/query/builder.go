@@ -34,21 +34,25 @@ func NewFilterSortLimitBuilder() FilterSortLimitBuilder {
 
 func (b *filterSortLimitBuilder) SetSort(sort sort.Sortable) FilterSortLimitBuilder {
 	b.sort = sort
+
 	return b
 }
 
 func (b *filterSortLimitBuilder) SetFilter(filter Filter) FilterSortLimitBuilder {
 	b.filter = filter
+
 	return b
 }
 
 func (b *filterSortLimitBuilder) SetLimit(limit int) FilterSortLimitBuilder {
 	b.limit = limit
+
 	return b
 }
 
 func (b *filterSortLimitBuilder) SetOffset(offset int) FilterSortLimitBuilder {
 	b.offset = offset
+
 	return b
 }
 

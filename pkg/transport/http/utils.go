@@ -24,5 +24,6 @@ func GetIntParamFromHTTPRequest(paramName string, r *http.Request, target *int) 
 			return err
 		}
 	}
+
 	return nil
 }

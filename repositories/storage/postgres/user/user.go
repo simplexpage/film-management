@@ -10,24 +10,24 @@ import (
 	"gorm.io/gorm"
 )
 
-// UserRepository is a struct for User.
-type UserRepository struct {
+// Repository is a struct for User.
+type Repository struct {
 	db     *gorm.DB
 	logger *zap.Logger
 }
 
-// NewUserRepository is a constructor for userRepository.
-func NewUserRepository(db *gorm.DB, logger *zap.Logger) *UserRepository {
-	return &UserRepository{
+// NewRepository is a constructor for Repository.
+func NewRepository(db *gorm.DB, logger *zap.Logger) *Repository {
+	return &Repository{
 		db:     db,
 		logger: logger,
 	}
 }
 
 // CreateUser is a method to create user.
-func (a UserRepository) CreateUser(ctx context.Context, user *models.User) error {
-	if err := a.db.WithContext(ctx).Create(user).Error; err != nil {
-		a.logger.Error("failed to add a new user in db", zap.Error(err))
+func (r Repository) CreateUser(ctx context.Context, user *models.User) error {
+	if err := r.db.WithContext(ctx).Create(user).Error; err != nil {
+		r.logger.Error("failed to add a new user in db", zap.Error(err))
 
 		return domain.ErrUserCreate
 	}
@@ -36,15 +36,15 @@ func (a UserRepository) CreateUser(ctx context.Context, user *models.User) error
 }
 
 // FindOneUserByUUID is a method to find one user.
-func (a UserRepository) FindOneUserByUUID(ctx context.Context, uuid uuid.UUID) (models.User, error) {
+func (r Repository) FindOneUserByUUID(ctx context.Context, uuid uuid.UUID) (models.User, error) {
 	var user models.User
 
-	if result := a.db.WithContext(ctx).Where("uuid = ?", uuid).First(&user); result.Error != nil {
+	if result := r.db.WithContext(ctx).Where("uuid = ?", uuid).First(&user); result.Error != nil {
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 			return models.User{}, domain.ErrUserNotFound
 		}
 
-		a.logger.Error("failed to find user in db", zap.Error(result.Error))
+		r.logger.Error("failed to find user in db", zap.Error(result.Error))
 
 		return models.User{}, domain.ErrUserFind
 	}
@@ -53,15 +53,15 @@ func (a UserRepository) FindOneUserByUUID(ctx context.Context, uuid uuid.UUID) (
 }
 
 // FindOneUserByUsername is a method to find one user.
-func (a UserRepository) FindOneUserByUsername(ctx context.Context, username string) (models.User, error) {
+func (r Repository) FindOneUserByUsername(ctx context.Context, username string) (models.User, error) {
 	var user models.User
 
-	if result := a.db.WithContext(ctx).Where("username = ?", username).First(&user); result.Error != nil {
+	if result := r.db.WithContext(ctx).Where("username = ?", username).First(&user); result.Error != nil {
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 			return models.User{}, domain.ErrUserNotFound
 		}
 
-		a.logger.Error("failed to find user in db", zap.Error(result.Error))
+		r.logger.Error("failed to find user in db", zap.Error(result.Error))
 
 		return models.User{}, domain.ErrUserFind
 	}
@@ -70,11 +70,11 @@ func (a UserRepository) FindOneUserByUsername(ctx context.Context, username stri
 }
 
 // UserExistsWithUsername checks if an user with the given username exists.
-func (a UserRepository) UserExistsWithUsername(ctx context.Context, username string) error {
+func (r Repository) UserExistsWithUsername(ctx context.Context, username string) error {
 	var count int64
 
 	// Check if a user with the same username exists
-	err := a.db.
+	err := r.db.
 		WithContext(ctx).
 		Model(&models.User{}).
 		Where("username = ?", username).
@@ -82,7 +82,7 @@ func (a UserRepository) UserExistsWithUsername(ctx context.Context, username str
 		Error
 
 	if err != nil {
-		a.logger.Error("failed to check user existence by username in db", zap.Error(err))
+		r.logger.Error("failed to check user existence by username in db", zap.Error(err))
 
 		return domain.ErrUserCheckExistence
 	}

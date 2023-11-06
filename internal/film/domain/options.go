@@ -6,8 +6,8 @@ type Opts struct {
 	repository Repository
 }
 
-func defaultOpts(Repository Repository) Opts {
+func defaultOpts(repository Repository) Opts {
 	return Opts{
-		repository: Repository,
+		repository: repository,
 	}
 }

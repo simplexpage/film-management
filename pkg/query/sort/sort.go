@@ -28,7 +28,7 @@ type Opts struct {
 	order string
 }
 
-// newOptions returns a Sortable object
+// newOptions returns a Sortable object.
 func newOptions(sortField string, availableSortFields []string) (*Opts, error) {
 	splits := strings.Split(sortField, ".")
 
@@ -52,17 +52,17 @@ func newOptions(sortField string, availableSortFields []string) (*Opts, error) {
 	}, nil
 }
 
-// Field returns the field name
+// Field returns the field name.
 func (o *Opts) Field() string {
 	return o.field
 }
 
-// Order returns the order direction in uppercase
+// Order returns the order direction in uppercase.
 func (o *Opts) Order() string {
 	return o.order
 }
 
-// stringInSlice checks if a string is in a slice of strings
+// stringInSlice checks if a string is in a slice of strings.
 func stringInSlice(strSlice []string, s string) bool {
 	for _, v := range strSlice {
 		if v == s {
@@ -73,7 +73,7 @@ func stringInSlice(strSlice []string, s string) bool {
 	return false
 }
 
-// GetSortOptions returns a Sortable object
+// GetSortOptions returns a Sortable object.
 func GetSortOptions(sortField string, fields []string, sortByDefault string) (Sortable, error) {
 	if sortField == "" {
 		sortField = sortByDefault
@@ -82,7 +82,7 @@ func GetSortOptions(sortField string, fields []string, sortByDefault string) (So
 	return newOptions(sortField, fields)
 }
 
-// GetDBQueryForSort returns a string that can be used in a SQL query
+// GetDBQueryForSort returns a string that can be used in a SQL query.
 func GetDBQueryForSort(option Sortable) string {
 	return fmt.Sprintf("%s %s", option.Field(), strings.ToUpper(option.Order()))
 }

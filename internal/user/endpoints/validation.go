@@ -5,7 +5,7 @@ import (
 	"unicode"
 )
 
-// UsernameValidator Custom validator function for username
+// UsernameValidator Custom validator function for username.
 func UsernameValidator(fl validator.FieldLevel) bool {
 	username := fl.Field().String()
 	if len(username) == 0 {

@@ -26,7 +26,7 @@ func NewAuthService(cfg auth.Config, logger *zap.Logger) *AuthService {
 }
 
 // GenerateAuthToken is a function for generating auth token.
-func (a AuthService) GenerateAuthToken(UUID string) (string, time.Time, error) {
+func (a AuthService) GenerateAuthToken(uuid string) (string, time.Time, error) {
 	privateKeyBytes, err := getPrivateKeyFile(a.cfg.PathPrivateKeyFile)
 	if err != nil {
 		a.logger.Debug("during getPrivateKeyFile", zap.Error(err))
@@ -48,7 +48,7 @@ func (a AuthService) GenerateAuthToken(UUID string) (string, time.Time, error) {
 			ExpiresAt: jwt.At(expirationTime),
 			IssuedAt:  jwt.At(time.Now()),
 		},
-		UUID: UUID,
+		UUID: uuid,
 	}
 
 	a.logger.Debug("claims", zap.Any("claims", claims))

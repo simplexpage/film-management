@@ -48,6 +48,7 @@ func GetLimitOption(limit int, defaultLimit int) (int, error) {
 		if err := validateLimit(limit); err != nil {
 			return 0, err
 		}
+
 		return limit, nil
 	}
 
@@ -60,6 +61,7 @@ func GetOffsetOption(offset int) (int, error) {
 		if err := validateOffset(offset); err != nil {
 			return 0, err
 		}
+
 		return offset, nil
 	}
 

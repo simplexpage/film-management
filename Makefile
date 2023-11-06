@@ -6,7 +6,7 @@ stop_local:
 	docker-compose down
 
 console_local:
-	docker exec -ti go_jwt_auth bash
+	docker exec -ti go_film_management bash
 
 migrate_local:
 	docker-compose run --rm go_film_management bash -c "./cmd/tmp/main -migrate-postgres-database"
@@ -15,17 +15,11 @@ seed_data_local:
 	docker-compose run --rm go_film_management bash -c "./cmd/tmp/main -seed-postgres-database"
 
 format_local:
-	docker-compose run --rm go_jwt_auth bash -c "gofmt -s -w ."
-
-all: lint test
+	docker-compose run --rm go_film_management bash -c "gofmt -s -w ."
 
 # Init swagger
 init_swagger:
 	docker-compose run --rm go_film_management bash -c "swag init -g internal/common/transport/http/http.go"
-
-# Run lint
-lint:
-	golangci-lint run
 
 .PHONY: cover
 cover:

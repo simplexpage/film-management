@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-// Connect to postgres database
+// Connect to postgres database.
 func Connect(config *Config, logger *zap.Logger) (*gorm.DB, error) {
 	dbURL := fmt.Sprintf("postgresql://%s:%s@%s:%s/%s",
 		config.Username, config.Password, config.Host, config.Port, config.Database)
