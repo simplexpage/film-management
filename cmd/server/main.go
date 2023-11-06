@@ -19,7 +19,10 @@ import (
 	userRepo "film-management/repositories/storage/postgres/user"
 	"flag"
 	"fmt"
+	kitprometheus "github.com/go-kit/kit/metrics/prometheus"
 	"github.com/oklog/oklog/pkg/group"
+	stdprometheus "github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"go.uber.org/zap"
 	"net"
 	"net/http"
@@ -99,6 +102,29 @@ func main() {
 	{
 		userService = domainUser.NewService(userRepository, authService, passwordService, optsForUser...)
 		userService = domainUser.NewLoggingMiddleware(log)(userService)
+		// Init metrics middleware
+		fieldKeys := []string{"method", "error"}
+		userService = domainUser.NewInstrumentingMiddleware(
+			kitprometheus.NewCounterFrom(stdprometheus.CounterOpts{
+				Namespace: "domain",
+				Subsystem: fmt.Sprintf("%s_%s", cfg.Name, "user"),
+				Name:      "request_count",
+				Help:      "Number of requests received.",
+			}, fieldKeys),
+			kitprometheus.NewHistogramFrom(stdprometheus.HistogramOpts{
+				Namespace: "domain",
+				Subsystem: fmt.Sprintf("%s_%s", cfg.Name, "user"),
+				Name:      "request_duration_seconds",
+				Help:      "Total duration of requests in seconds.",
+				Buckets: []float64{
+					0.1,  // 100 ms
+					0.2,  // 200 ms
+					0.25, // 250 ms
+					0.5,  // 500 ms
+					1,    // 1 s
+				},
+			}, fieldKeys),
+		)(userService)
 	}
 
 	// Film service
@@ -106,6 +132,29 @@ func main() {
 	{
 		filmService = domainFilm.NewService(filmRepository, optsForFilm...)
 		filmService = domainFilm.NewLoggingMiddleware(log)(filmService)
+		// Init metrics middleware
+		fieldKeys := []string{"method", "error"}
+		filmService = domainFilm.NewInstrumentingMiddleware(
+			kitprometheus.NewCounterFrom(stdprometheus.CounterOpts{
+				Namespace: "domain",
+				Subsystem: fmt.Sprintf("%s_%s", cfg.Name, "film"),
+				Name:      "request_count",
+				Help:      "Number of requests received.",
+			}, fieldKeys),
+			kitprometheus.NewHistogramFrom(stdprometheus.HistogramOpts{
+				Namespace: "domain",
+				Subsystem: fmt.Sprintf("%s_%s", cfg.Name, "film"),
+				Name:      "request_duration_seconds",
+				Help:      "Total duration of requests in seconds.",
+				Buckets: []float64{
+					0.1,  // 100 ms
+					0.2,  // 200 ms
+					0.25, // 250 ms
+					0.5,  // 500 ms
+					1,    // 1 s
+				},
+			}, fieldKeys),
+		)(filmService)
 	}
 
 	// Init endpoints
@@ -130,8 +179,34 @@ func main() {
 		httpHandlers.HandleFunc("/", response.NotFoundFunc)
 	}
 
+	// Init metrics handler
+	http.DefaultServeMux.Handle("/metrics", promhttp.Handler())
+
 	// Init group
 	var g group.Group
+	{
+		// Init debug listener server
+		debugListener, err := net.Listen("tcp", fmt.Sprintf(":%d", cfg.DebugHTTP.Port))
+		if err != nil {
+			log.Error("debugListener", zap.Error(err))
+		}
+
+		server := &http.Server{
+			ReadTimeout:       cfg.DebugHTTP.ReadTimeout * time.Second,
+			ReadHeaderTimeout: cfg.DebugHTTP.ReadHeaderTimeout * time.Second,
+			WriteTimeout:      cfg.DebugHTTP.WriteTimeout * time.Second,
+			Handler:           http.DefaultServeMux,
+		}
+		g.Add(func() error {
+			log.Info("transport debug/HTTP", zap.String("port", fmt.Sprintf(":%d", cfg.DebugHTTP.Port)))
+
+			return server.Serve(debugListener)
+		}, func(error) {
+			if err := server.Shutdown(context.Background()); err != nil {
+				log.Error("transport debug/HTTP during Shutdown", zap.Error(err))
+			}
+		})
+	}
 	{
 		// Init http server
 		httpListener, errHTTPListener := net.Listen("tcp", fmt.Sprintf(":%d", cfg.HTTP.Port))

@@ -23,6 +23,12 @@ type Config struct {
 		ReadHeaderTimeout  time.Duration
 		WriteTimeout       time.Duration
 	}
+	DebugHTTP struct {
+		Port              int
+		ReadTimeout       time.Duration
+		ReadHeaderTimeout time.Duration
+		WriteTimeout      time.Duration
+	}
 	Log     logger.Config
 	Storage struct {
 		Postgres postgresql.Config
@@ -63,7 +69,7 @@ func setConfigFile(v *viper.Viper, configPath string) {
 
 func setDefaults(v *viper.Viper) {
 	// Main
-	v.SetDefault("name", "film-management")
+	v.SetDefault("name", "film_management")
 	// Http
 	v.SetDefault("http.port", 8080)
 	v.SetDefault("http.readTimeout", 5)
@@ -76,6 +82,11 @@ func setDefaults(v *viper.Viper) {
 		"/api/v1/user/register",
 		"/api/v1/user/login",
 	})
+	// Debug Http
+	v.SetDefault("debugHttp.port", 8081)
+	v.SetDefault("debugHttp.readTimeout", 5)
+	v.SetDefault("debugHttp.readHeaderTimeout", 3)
+	v.SetDefault("debugHttp.writeTimeout", 10)
 	// Services
 	// User
 	v.SetDefault("services.auth.authDurationMin", 60)

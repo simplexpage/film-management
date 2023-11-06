@@ -8,6 +8,7 @@ services:
     container_name: go_film_management
     ports:
       - ${HTTP_EXTERNAL_PORT}:${HTTP_PORT}
+      - ${HTTP_DEBUG_EXTERNAL_PORT}:${HTTP_DEBUG_PORT}
     volumes:
       - ./:/app:delegated
     depends_on:

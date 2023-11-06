@@ -1,6 +1,8 @@
 name: "film-management"
 http:
   port: 8080
+debugHttp:
+  port: 8081
 storage:
   postgres:
     host: "db_film_management"

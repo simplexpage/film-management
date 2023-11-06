@@ -81,3 +81,7 @@ http://localhost:8088/api/v1/film/swagger/index.html
 
 ### Postgresql schema
 https://dbdiagram.io/d/film-management-6545f3d87d8bbd646577e9de
+
+## Prometheus metrics
+
+http://localhost:8078/metrics
