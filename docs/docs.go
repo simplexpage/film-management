@@ -583,7 +583,7 @@ const docTemplate = `{
         "endpoints.AddFilmRequest": {
             "type": "object",
             "required": [
-                "cast",
+                "casts",
                 "director",
                 "genres",
                 "releaseDate",
@@ -591,9 +591,19 @@ const docTemplate = `{
                 "title"
             ],
             "properties": {
-                "cast": {
-                    "type": "string",
-                    "example": "John Doe, Jane Doe, Foo Bar, Baz Quux"
+                "casts": {
+                    "type": "array",
+                    "maxItems": 10,
+                    "minItems": 1,
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "John Doe",
+                        " Jane Doe",
+                        " Foo Bar",
+                        " Baz Quux"
+                    ]
                 },
                 "director": {
                     "type": "string",
@@ -633,7 +643,12 @@ const docTemplate = `{
             }
         },
         "endpoints.AddFilmResponse": {
-            "type": "object"
+            "type": "object",
+            "properties": {
+                "item": {
+                    "$ref": "#/definitions/endpoints.ItemFilm"
+                }
+            }
         },
         "endpoints.DeleteFilmResponse": {
             "type": "object"
@@ -641,8 +656,11 @@ const docTemplate = `{
         "endpoints.ItemAllFilms": {
             "type": "object",
             "properties": {
-                "cast": {
-                    "type": "string"
+                "casts": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 },
                 "created_at": {
                     "type": "string"
@@ -687,8 +705,49 @@ const docTemplate = `{
         "endpoints.ItemFilm": {
             "type": "object",
             "properties": {
-                "cast": {
+                "casts": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "created_at": {
                     "type": "string"
+                },
+                "director": {
+                    "type": "string"
+                },
+                "genres": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "release_date": {
+                    "type": "string"
+                },
+                "synopsis": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "uuid": {
+                    "type": "string"
+                }
+            }
+        },
+        "endpoints.ItemViewFilm": {
+            "type": "object",
+            "properties": {
+                "casts": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 },
                 "created_at": {
                     "type": "string"
@@ -698,6 +757,12 @@ const docTemplate = `{
                 },
                 "director": {
                     "type": "string"
+                },
+                "genres": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 },
                 "release_date": {
                     "type": "string"
@@ -742,6 +807,9 @@ const docTemplate = `{
             "properties": {
                 "auth_token": {
                     "type": "string"
+                },
+                "expired_at": {
+                    "type": "string"
                 }
             }
         },
@@ -772,22 +840,46 @@ const docTemplate = `{
         "endpoints.UpdateFilmRequest": {
             "type": "object",
             "required": [
-                "cast",
+                "casts",
                 "director",
+                "genres",
                 "releaseDate",
                 "synopsis",
                 "title"
             ],
             "properties": {
-                "cast": {
-                    "type": "string",
-                    "example": "John Doe, Jane Doe, Foo Bar, Baz Quux"
+                "casts": {
+                    "type": "array",
+                    "maxItems": 10,
+                    "minItems": 1,
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "John Doe",
+                        " Jane Doe",
+                        " Foo Bar",
+                        " Baz Quux"
+                    ]
                 },
                 "director": {
                     "type": "string",
                     "maxLength": 40,
                     "minLength": 3,
                     "example": "John Doe"
+                },
+                "genres": {
+                    "type": "array",
+                    "maxItems": 5,
+                    "minItems": 1,
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "action",
+                        "adventure",
+                        "sci-fi"
+                    ]
                 },
                 "releaseDate": {
                     "type": "string",
@@ -808,7 +900,12 @@ const docTemplate = `{
             }
         },
         "endpoints.UpdateFilmResponse": {
-            "type": "object"
+            "type": "object",
+            "properties": {
+                "item": {
+                    "$ref": "#/definitions/endpoints.ItemFilm"
+                }
+            }
         },
         "endpoints.ViewAllFilmsResponse": {
             "type": "object",
@@ -828,7 +925,7 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "item": {
-                    "$ref": "#/definitions/endpoints.ItemFilm"
+                    "$ref": "#/definitions/endpoints.ItemViewFilm"
                 }
             }
         },

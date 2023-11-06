@@ -28,23 +28,85 @@ func NewRepository(db *gorm.DB, logger *zap.Logger) *Repository {
 	}
 }
 
-// CreateFilm is a method to create film.
 func (f Repository) CreateFilm(ctx context.Context, model *models.Film) error {
-	if err := f.db.WithContext(ctx).Create(model).Error; err != nil {
-		f.logger.Error("failed to add a new film in db", zap.Error(err))
+	// Start a new transaction
+	tx := f.db.Begin()
 
-		return domain.ErrFilmCreate
+	// Check if the director with the specified name exists
+	if err := f.createOrUpdateDirector(tx, model); err != nil {
+		tx.Rollback()
+		f.logger.Error("failed to update a film in db", zap.Error(err))
+
+		return domain.ErrFilmUpdate
 	}
+
+	// Create the film
+	if err := tx.Create(model).Error; err != nil {
+		// Rollback the transaction in case of an error
+		tx.Rollback()
+		return err
+	}
+
+	// Commit the transaction if everything is successful
+	tx.Commit()
 
 	return nil
 }
 
-// UpdateFilm is a method to update film.
 func (f Repository) UpdateFilm(ctx context.Context, model *models.Film) error {
-	if err := f.db.WithContext(ctx).Model(&model).Updates(model).Error; err != nil {
+	tx := f.db.WithContext(ctx).Begin()
+
+	// Check if the director with the specified name exists
+	if err := f.createOrUpdateDirector(tx, model); err != nil {
+		tx.Rollback()
 		f.logger.Error("failed to update a film in db", zap.Error(err))
 
 		return domain.ErrFilmUpdate
+	}
+
+	if err := tx.Model(&model).Updates(model).Error; err != nil {
+		tx.Rollback()
+		f.logger.Error("failed to update a film in db", zap.Error(err))
+
+		return domain.ErrFilmUpdate
+	}
+
+	if err := tx.Model(&model).Association("Genres").Replace(model.Genres); err != nil {
+		tx.Rollback()
+		f.logger.Error("failed to update genres for the film in db", zap.Error(err))
+
+		return domain.ErrFilmUpdate
+	}
+
+	if err := tx.Model(&model).Association("Casts").Replace(model.Casts); err != nil {
+		tx.Rollback()
+		f.logger.Error("failed to update casts for the film in db", zap.Error(err))
+
+		return domain.ErrFilmUpdate
+	}
+
+	tx.Commit()
+
+	return nil
+}
+
+// createOrUpdateDirector is a method to create or update director.
+func (f Repository) createOrUpdateDirector(tx *gorm.DB, model *models.Film) error {
+	var director models.Director
+	err := tx.Where("name = ?", model.Director.Name).First(&director).Error
+
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		return err
+	}
+
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		err := tx.Create(&model.Director).Error
+		if err != nil {
+			return err
+		}
+		model.DirectorID = model.Director.ID
+	} else {
+		model.Director.ID = director.ID
 	}
 
 	return nil
@@ -67,11 +129,17 @@ func (f Repository) FindOneFilmByUUID(ctx context.Context, uuid uuid.UUID) (mode
 	return film, nil
 }
 
-// FindOneFilmByUUIDWithCreator is a method to find one film by UUID.
-func (f Repository) FindOneFilmByUUIDWithCreator(ctx context.Context, uuid uuid.UUID) (models.Film, error) {
+// FindOneFilmForViewByUUID is a method to find one film by UUID.
+func (f Repository) FindOneFilmForViewByUUID(ctx context.Context, uuid uuid.UUID) (models.Film, error) {
 	var film models.Film
 
-	if result := f.db.WithContext(ctx).Preload("Creator").Where("uuid = ?", uuid).First(&film); result.Error != nil {
+	if result := f.db.WithContext(ctx).
+		Preload("Creator").
+		Preload("Genres").
+		Preload("Director").
+		Preload("Casts").
+		Where("uuid = ?", uuid).
+		First(&film); result.Error != nil {
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 			return models.Film{}, validation.NotFoundError{Err: domain.ErrFilmNotFound}
 		}
@@ -99,6 +167,8 @@ func (f Repository) FindAllFilms(ctx context.Context, filterSortLimit query.Filt
 	// Find all films with condition
 	if result := f.db.WithContext(ctx).
 		Preload("Genres").
+		Preload("Director").
+		Preload("Casts").
 		Where(condition).
 		Limit(filterSortLimit.Limit).
 		Offset(filterSortLimit.Offset).
@@ -136,12 +206,12 @@ func addFilmFiltersToCondition(condition *gorm.DB, field string, value interface
 		} else if date, ok := value.(string); ok {
 			condition = condition.Where("release_date = ?", date)
 		} else {
-			f.logger.Debug("release_date is not []string or string")
+			f.logger.Error("release_date is not []string or string")
 		}
 	case "genres":
 		genreNames, ok := value.([]string)
 		if !ok {
-			f.logger.Debug("genres is not []string")
+			f.logger.Error("genres is not []string")
 			return
 		}
 		// Get genre IDs
@@ -171,31 +241,57 @@ func (f Repository) DeleteFilm(ctx context.Context, uuid uuid.UUID) error {
 	return nil
 }
 
-// FilmExistsWithTitle checks if a film with the given title exists.
-func (f Repository) FilmExistsWithTitle(ctx context.Context, title string) error {
+// FilmExists checks if a film with the given filmID and title exists.
+// The operation parameter specifies the type of operation: "add" or "update".
+func (f Repository) FilmExists(ctx context.Context, title string, filmID uuid.UUID, operation models.Operation) error {
 	var count int64
 
-	// Check if a film with the same title exists
-	err := f.db.WithContext(ctx).
-		Model(&models.Film{}).
-		Where("title = ?", title).
-		Count(&count).
-		Error
+	switch operation {
+	case models.OperationAdd:
+		// Check if advertiser with the same userID exists
+		err := f.db.WithContext(ctx).
+			Model(&models.Film{}).
+			Where("title = ?", title).
+			Count(&count).
+			Error
 
-	if err != nil {
-		f.logger.Error("failed to check film existence by title in db", zap.Error(err))
+		if err != nil {
+			f.logger.Error("failed to check film existence by title in db", zap.Error(err))
 
-		return domain.ErrFilmCheckExistence
-	}
+			return domain.ErrFilmCheckExistence
+		}
 
-	if count > 0 {
-		return domain.ErrFilmExistsWithTitle
+		if count > 0 {
+			return domain.ErrFilmExistsWithTitle
+		}
+	case models.OperationUpdate:
+		// Check if another film with the same title exists, except for the current film
+		err := f.db.WithContext(ctx).
+			Model(&models.Film{}).
+			Where("title = ? AND uuid <> ?", title, filmID).
+			Count(&count).
+			Error
+
+		if err != nil {
+			f.logger.Error("failed to check film existence by title and uuid in db", zap.Error(err))
+
+			return domain.ErrFilmCheckExistence
+		}
+
+		if count > 0 {
+			return domain.ErrFilmExistsWithTitle
+		}
+
+	default:
+		f.logger.Debug("unknown operation", zap.String("operation", string(operation)))
+
+		return domain.ErrUnknownOperation
 	}
 
 	return nil
 }
 
-// CreateGenre создает новый жанр в базе данных.
+// CreateGenre creates a new genre.
 func (f Repository) CreateGenre(ctx context.Context, genre *models.Genre) (*models.Genre, error) {
 	if err := f.db.WithContext(ctx).Create(genre).Error; err != nil {
 		f.logger.Error("failed to create genre", zap.Error(err))
@@ -206,7 +302,7 @@ func (f Repository) CreateGenre(ctx context.Context, genre *models.Genre) (*mode
 	return genre, nil
 }
 
-// GetGenresByNames возвращает список жанров по их названиям.
+// GetGenresByNames returns genres by names.
 func (f Repository) GetGenresByNames(ctx context.Context, names []string) ([]models.Genre, error) {
 	var genres []models.Genre
 
@@ -217,4 +313,28 @@ func (f Repository) GetGenresByNames(ctx context.Context, names []string) ([]mod
 	}
 
 	return genres, nil
+}
+
+// CreateCast creates a new cast.
+func (f Repository) CreateCast(ctx context.Context, cast *models.Cast) (*models.Cast, error) {
+	if err := f.db.WithContext(ctx).Create(cast).Error; err != nil {
+		f.logger.Error("failed to create cast", zap.Error(err))
+
+		return nil, domain.ErrFilmCreateCast
+	}
+
+	return cast, nil
+}
+
+// GetCastsByNames returns casts by names.
+func (f Repository) GetCastsByNames(ctx context.Context, names []string) ([]models.Cast, error) {
+	var casts []models.Cast
+
+	if err := f.db.WithContext(ctx).Where("name IN ?", names).Find(&casts).Error; err != nil {
+		f.logger.Error("failed to get casts by names", zap.Error(err))
+
+		return nil, domain.ErrFilmGetCastsByNames
+	}
+
+	return casts, nil
 }

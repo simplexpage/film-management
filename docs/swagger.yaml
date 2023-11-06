@@ -2,9 +2,17 @@ basePath: /api/v1
 definitions:
   endpoints.AddFilmRequest:
     properties:
-      cast:
-        example: John Doe, Jane Doe, Foo Bar, Baz Quux
-        type: string
+      casts:
+        example:
+        - John Doe
+        - ' Jane Doe'
+        - ' Foo Bar'
+        - ' Baz Quux'
+        items:
+          type: string
+        maxItems: 10
+        minItems: 1
+        type: array
       director:
         example: John Doe
         maxLength: 40
@@ -34,7 +42,7 @@ definitions:
         minLength: 3
         type: string
     required:
-    - cast
+    - casts
     - director
     - genres
     - releaseDate
@@ -42,13 +50,18 @@ definitions:
     - title
     type: object
   endpoints.AddFilmResponse:
+    properties:
+      item:
+        $ref: '#/definitions/endpoints.ItemFilm'
     type: object
   endpoints.DeleteFilmResponse:
     type: object
   endpoints.ItemAllFilms:
     properties:
-      cast:
-        type: string
+      casts:
+        items:
+          type: string
+        type: array
       created_at:
         type: string
       director:
@@ -77,14 +90,45 @@ definitions:
     type: object
   endpoints.ItemFilm:
     properties:
-      cast:
+      casts:
+        items:
+          type: string
+        type: array
+      created_at:
         type: string
+      director:
+        type: string
+      genres:
+        items:
+          type: string
+        type: array
+      release_date:
+        type: string
+      synopsis:
+        type: string
+      title:
+        type: string
+      updated_at:
+        type: string
+      uuid:
+        type: string
+    type: object
+  endpoints.ItemViewFilm:
+    properties:
+      casts:
+        items:
+          type: string
+        type: array
       created_at:
         type: string
       creator:
         $ref: '#/definitions/endpoints.ItemCreator'
       director:
         type: string
+      genres:
+        items:
+          type: string
+        type: array
       release_date:
         type: string
       synopsis:
@@ -116,6 +160,8 @@ definitions:
     properties:
       auth_token:
         type: string
+      expired_at:
+        type: string
     type: object
   endpoints.RegisterRequest:
     properties:
@@ -137,14 +183,32 @@ definitions:
     type: object
   endpoints.UpdateFilmRequest:
     properties:
-      cast:
-        example: John Doe, Jane Doe, Foo Bar, Baz Quux
-        type: string
+      casts:
+        example:
+        - John Doe
+        - ' Jane Doe'
+        - ' Foo Bar'
+        - ' Baz Quux'
+        items:
+          type: string
+        maxItems: 10
+        minItems: 1
+        type: array
       director:
         example: John Doe
         maxLength: 40
         minLength: 3
         type: string
+      genres:
+        example:
+        - action
+        - adventure
+        - sci-fi
+        items:
+          type: string
+        maxItems: 5
+        minItems: 1
+        type: array
       releaseDate:
         example: "2021-01-01"
         type: string
@@ -159,13 +223,17 @@ definitions:
         minLength: 3
         type: string
     required:
-    - cast
+    - casts
     - director
+    - genres
     - releaseDate
     - synopsis
     - title
     type: object
   endpoints.UpdateFilmResponse:
+    properties:
+      item:
+        $ref: '#/definitions/endpoints.ItemFilm'
     type: object
   endpoints.ViewAllFilmsResponse:
     properties:
@@ -179,7 +247,7 @@ definitions:
   endpoints.ViewFilmResponse:
     properties:
       item:
-        $ref: '#/definitions/endpoints.ItemFilm'
+        $ref: '#/definitions/endpoints.ItemViewFilm'
     type: object
   http.HealthCheckResponse:
     properties:

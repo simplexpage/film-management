@@ -137,7 +137,7 @@ type ItemAllFilms struct {
 	Director    string    `json:"director"`
 	Genres      []string  `json:"genres"`
 	ReleaseDate string    `json:"release_date"`
-	Cast        string    `json:"cast"`
+	Casts       []string  `json:"casts"`
 	Synopsis    string    `json:"synopsis"`
 	CreatedAt   string    `json:"created_at"`
 	UpdatedAt   string    `json:"updated_at"`
@@ -151,10 +151,10 @@ func domainAllFilmItemsToAllItemFilms(items []models.Film) []ItemAllFilms {
 		films = append(films, ItemAllFilms{
 			UUID:        item.UUID,
 			Title:       item.Title,
-			Director:    item.Director,
+			Director:    item.Director.Name,
 			Genres:      convertGenresToStrings(item.Genres),
 			ReleaseDate: item.ReleaseDate.Format(time.DateOnly),
-			Cast:        item.Cast,
+			Casts:       convertCastsToStrings(item.Casts),
 			Synopsis:    item.Synopsis,
 			CreatedAt:   time.Unix(item.CreatedAt, 0).Format(time.DateTime),
 			UpdatedAt:   time.Unix(item.UpdatedAt, 0).Format(time.DateTime),
@@ -173,6 +173,17 @@ func convertGenresToStrings(genres []models.Genre) []string {
 	}
 
 	return genreNames
+}
+
+// convertCastsToStrings is a function to convert casts to strings.
+func convertCastsToStrings(casts []models.Cast) []string {
+	castNames := make([]string, len(casts))
+
+	for i, cast := range casts {
+		castNames[i] = cast.Name
+	}
+
+	return castNames
 }
 
 // getFilterOptions is a function to get filter options.

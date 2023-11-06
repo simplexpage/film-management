@@ -34,6 +34,7 @@ func main() {
 	var (
 		configPath              = flag.String("config-path", "./config", "Path to config file")
 		migratePostgresDatabase = flag.Bool("migrate-postgres-database", false, "Migrate postgres database")
+		seedTestData            = flag.Bool("seed-postgres-database", false, "Seed test data")
 	)
 
 	// Parse flags
@@ -50,6 +51,16 @@ func main() {
 		err := migrate.PostgresDatabase(&cfg.Storage.Postgres, log)
 		if err != nil {
 			log.Error("Failed to migrate Postgres database", zap.Error(err))
+		}
+
+		return
+	}
+
+	// Seed test data database
+	if *seedTestData {
+		err := migrate.SeedTestData(&cfg.Storage.Postgres, log)
+		if err != nil {
+			log.Error("Failed to seed test data", zap.Error(err))
 		}
 
 		return

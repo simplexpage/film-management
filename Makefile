@@ -11,6 +11,9 @@ console_local:
 migrate_local:
 	docker-compose run --rm go_film_management bash -c "./cmd/tmp/main -migrate-postgres-database"
 
+seed_data_local:
+	docker-compose run --rm go_film_management bash -c "./cmd/tmp/main -seed-postgres-database"
+
 format_local:
 	docker-compose run --rm go_jwt_auth bash -c "gofmt -s -w ."
 

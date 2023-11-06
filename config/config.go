@@ -19,7 +19,6 @@ type Config struct {
 		Port               int
 		CorsAllowedOrigins []string
 		NotAuthUrls        []string
-		AuthTokenForTest   string
 		ReadTimeout        time.Duration
 		ReadHeaderTimeout  time.Duration
 		WriteTimeout       time.Duration

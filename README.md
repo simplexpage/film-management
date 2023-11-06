@@ -79,4 +79,4 @@ http://localhost:8088/api/v1/film/swagger/index.html
 ## Database
 
 ### Postgresql schema
-https://dbdiagram.io/d/
+https://dbdiagram.io/d/film-management-6545f3d87d8bbd646577e9de

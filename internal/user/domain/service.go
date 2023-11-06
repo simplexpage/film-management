@@ -4,6 +4,7 @@ import (
 	"context"
 	"film-management/internal/user/domain/models"
 	"film-management/pkg/validation"
+	"time"
 )
 
 // service is a struct for domain service.
@@ -51,22 +52,22 @@ func (s service) Register(ctx context.Context, model *models.User) error {
 }
 
 // Login is a method to login user.
-func (s service) Login(ctx context.Context, username string, password string) (string, error) {
+func (s service) Login(ctx context.Context, username string, password string) (string, time.Time, error) {
 	// Find user by username in db
 	user, err := s.userRepository.FindOneUserByUsername(ctx, username)
 	if err != nil {
-		return "", validation.CustomError{Field: "password", Err: ErrIncorrectLoginOrPassword}
+		return "", time.Time{}, validation.CustomError{Field: "password", Err: ErrIncorrectLoginOrPassword}
 	}
 
 	// Compare password hash
 	if ok := s.passwordService.ComparePasswordHash(password, user.Password); !ok {
-		return "", validation.CustomError{Field: "password", Err: ErrIncorrectLoginOrPassword}
+		return "", time.Time{}, validation.CustomError{Field: "password", Err: ErrIncorrectLoginOrPassword}
 	}
 
 	// Generate auth token
-	if authToken, errAuthToken := s.authService.GenerateAuthToken(user.UUID.String()); errAuthToken != nil {
-		return "", errAuthToken
+	if authToken, expirationTime, errAuthToken := s.authService.GenerateAuthToken(user.UUID.String()); errAuthToken != nil {
+		return "", time.Time{}, errAuthToken
 	} else {
-		return authToken, nil
+		return authToken, expirationTime, nil
 	}
 }

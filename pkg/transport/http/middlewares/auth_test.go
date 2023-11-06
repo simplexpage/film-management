@@ -3,6 +3,7 @@ package middlewares_test
 import (
 	"film-management/config"
 	"film-management/pkg/transport/http/middlewares"
+	"film-management/repositories/services"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -12,7 +13,7 @@ import (
 )
 
 const (
-	ConfigPath = "../../../config/test"
+	ConfigPath = "../../../../config"
 )
 
 func TestAuthMiddleware(t *testing.T) {
@@ -28,21 +29,27 @@ func TestAuthMiddleware(t *testing.T) {
 	cfg := config.GetConfig(ConfigPath)
 
 	var (
-		logger            = zap.NewNop()
-		notAuthURLs       = []string{"/public", "/login"}
-		pathPublicKeyFile = cfg.Services.User.PathPublicKeyFile
-		authTokenForTest  = cfg.HTTP.AuthTokenForTest
+		logger      = zap.NewNop()
+		notAuthURLs = []string{"/public", "/login"}
+		authService = services.NewAuthService(cfg.Services.Auth, logger)
 	)
+
+	token, _, err := authService.GenerateAuthToken("d83d97ab-ff68-4de2-b2a9-7cd5f0fc9a5e")
+	if err != nil {
+		return
+	}
 
 	authHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	})
 
+	handler := middlewares.AuthMiddleware(notAuthURLs, authService)(authHandler)
+
 	testCases := []testCase{
 		{
 			name:           "ValidToken",
 			url:            "/protected",
-			authToken:      middlewares.AuthorizationPrefix + " " + authTokenForTest,
+			authToken:      middlewares.AuthorizationPrefix + " " + token,
 			expectedStatus: http.StatusOK,
 		},
 		{
@@ -66,12 +73,10 @@ func TestAuthMiddleware(t *testing.T) {
 		{
 			name:           "NotAuthURL",
 			url:            "/public",
-			authToken:      authTokenForTest,
+			authToken:      "",
 			expectedStatus: http.StatusOK,
 		},
 	}
-
-	handler := middlewares.AuthMiddleware(notAuthURLs, pathPublicKeyFile, logger)(authHandler)
 
 	for _, tc := range testCases {
 		tc := tc

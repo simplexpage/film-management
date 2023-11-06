@@ -26,24 +26,26 @@ func NewAuthService(cfg auth.Config, logger *zap.Logger) *AuthService {
 }
 
 // GenerateAuthToken is a function for generating auth token.
-func (a AuthService) GenerateAuthToken(UUID string) (string, error) {
+func (a AuthService) GenerateAuthToken(UUID string) (string, time.Time, error) {
 	privateKeyBytes, err := getPrivateKeyFile(a.cfg.PathPrivateKeyFile)
 	if err != nil {
 		a.logger.Debug("during getPrivateKeyFile", zap.Error(err))
 
-		return "", auth.ErrGetPrivateKeyFile
+		return "", time.Time{}, auth.ErrGetPrivateKeyFile
 	}
 
 	privateKey, err := jwt.ParseRSAPrivateKeyFromPEM(privateKeyBytes)
 	if err != nil {
 		a.logger.Debug("during jwt.ParseRSAPrivateKeyFromPEM", zap.Error(err))
 
-		return "", auth.ErrParseRSAPrivateKeyFromPEM
+		return "", time.Time{}, auth.ErrParseRSAPrivateKeyFromPEM
 	}
+
+	expirationTime := time.Now().Add(time.Duration(a.cfg.AuthDurationMin) * time.Minute)
 
 	claims := &auth.JwtClaims{
 		StandardClaims: jwt.StandardClaims{
-			ExpiresAt: jwt.At(time.Now().Add(time.Duration(a.cfg.AuthDurationMin) * time.Minute)),
+			ExpiresAt: jwt.At(expirationTime),
 			IssuedAt:  jwt.At(time.Now()),
 		},
 		UUID: UUID,
@@ -55,10 +57,10 @@ func (a AuthService) GenerateAuthToken(UUID string) (string, error) {
 	if err != nil {
 		a.logger.Debug("during jwt.NewWithClaims", zap.Error(err))
 
-		return "", auth.ErrCreateSignToken
+		return "", time.Time{}, auth.ErrCreateSignToken
 	}
 
-	return token, nil
+	return token, expirationTime, nil
 }
 
 // ParseAuthToken is a function for parsing token.

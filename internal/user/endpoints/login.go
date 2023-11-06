@@ -6,6 +6,7 @@ import (
 	"film-management/pkg/validation"
 	"fmt"
 	"github.com/go-kit/kit/endpoint"
+	"time"
 )
 
 // MakeLoginEndpoint is an endpoint for Login.
@@ -22,9 +23,9 @@ func MakeLoginEndpoint(s domain.Service) endpoint.Endpoint {
 		}
 
 		// Login
-		authToken, err := s.Login(ctx, reqForm.Username, reqForm.Password)
+		authToken, expirationTime, err := s.Login(ctx, reqForm.Username, reqForm.Password)
 
-		return LoginResponse{AuthToken: authToken, Err: err}, nil
+		return LoginResponse{AuthToken: authToken, ExpiredAt: expirationTime, Err: err}, nil
 	}
 }
 
@@ -60,8 +61,9 @@ func (r *LoginRequest) Validate() error {
 
 // LoginResponse is a response for Login.
 type LoginResponse struct {
-	AuthToken string `json:"auth_token"`
-	Err       error  `json:"err,omitempty" swaggerignore:"true"`
+	AuthToken string    `json:"auth_token"`
+	ExpiredAt time.Time `json:"expired_at"`
+	Err       error     `json:"err,omitempty" swaggerignore:"true"`
 }
 
 // Failed implements response.Failed.

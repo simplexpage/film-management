@@ -15,4 +15,7 @@ var (
 	ErrFilmCreateGenre      = errors.New("failed to create genre")
 	ErrFilmGetGenresByNames = errors.New("failed to get genres by names")
 	ErrFilmGetCount         = errors.New("failed to get count")
+	ErrUnknownOperation     = errors.New("unknown operation")
+	ErrFilmCreateCast       = errors.New("failed to create cast")
+	ErrFilmGetCastsByNames  = errors.New("failed to get casts by names")
 )
