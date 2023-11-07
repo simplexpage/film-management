@@ -5,7 +5,6 @@ import (
 	"film-management/internal/film/domain"
 	"film-management/internal/film/domain/models"
 	"film-management/pkg/validation"
-	"fmt"
 	"github.com/go-kit/kit/endpoint"
 	"github.com/google/uuid"
 	"strings"
@@ -89,18 +88,6 @@ type AddFilmRequest struct {
 func (r *AddFilmRequest) Validate() error {
 	// Get custom validator
 	customValidator, err := validation.GetValidator()
-	if err != nil {
-		return err
-	}
-
-	// Register custom validator "customDate"
-	err = customValidator.GetValidate().RegisterValidation("customDate", DateValidator)
-	if err != nil {
-		return err
-	}
-
-	// Add translation for "customDate"
-	err = customValidator.AddTranslation("customDate", fmt.Sprintf("{0} must be valid (YYYY-MM-DD)"))
 	if err != nil {
 		return err
 	}

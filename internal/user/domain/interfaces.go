@@ -16,8 +16,6 @@ type Service interface {
 }
 
 // UserRepository is a repository for user.
-//
-//go:generate mockgen -source=interfaces.go -destination=mocks/mock_user_repository.go -package=mocks
 type UserRepository interface {
 	CreateUser(ctx context.Context, user *models.User) error
 	FindOneUserByUUID(ctx context.Context, uuid uuid.UUID) (models.User, error)
@@ -25,13 +23,11 @@ type UserRepository interface {
 	UserExistsWithUsername(ctx context.Context, username string) error
 }
 
-//go:generate mockgen -source=interfaces.go -destination=mocks/mock_password_service.go -package=mocks
 type PasswordService interface {
 	GeneratePasswordHash(password string) (string, error)
 	ComparePasswordHash(password, hash string) bool
 }
 
-//go:generate mockgen -source=interfaces.go -destination=mocks/mock_auth_service.go -package=mocks
 type AuthService interface {
 	GenerateAuthToken(userID string) (string, time.Time, error)
 }

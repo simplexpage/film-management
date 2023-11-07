@@ -80,7 +80,7 @@ type ViewAllFilmsRequest struct {
 	Limit       int      `json:"limit" validate:"omitempty,min=1,max=100" example:"10"`
 	Offset      int      `json:"offset" validate:"omitempty,min=0" example:"0"`
 	Title       string   `json:"title" validate:"omitempty,min=3,max=30" example:"Garry Potter"`
-	ReleaseDate string   `json:"release_date" validate:"omitempty,customDate,customRangeDate" example:"2021-01-01,2021-12-31:2022-01-01"`
+	ReleaseDate string   `json:"release_date" validate:"omitempty,customRangeDate,customRangeDateCorrect" example:"2021-01-01,2021-12-31:2022-01-01"`
 	Genres      []string `json:"genres" validate:"omitempty,min=1,max=5,dive,min=3,max=100" example:"action,adventure,sci-fi"`
 }
 
@@ -88,30 +88,6 @@ type ViewAllFilmsRequest struct {
 func (r *ViewAllFilmsRequest) Validate() error {
 	// Get custom validator
 	customValidator, err := validation.GetValidator()
-	if err != nil {
-		return err
-	}
-
-	// Register custom validator "customDate"
-	err = customValidator.GetValidate().RegisterValidation("customDate", CustomDateValidator)
-	if err != nil {
-		return err
-	}
-
-	// Register custom validator "customRangeDate"
-	err = customValidator.GetValidate().RegisterValidation("customRangeDate", CustomDateRangeValidator)
-	if err != nil {
-		return err
-	}
-
-	// Add translation for "customDate"
-	err = customValidator.AddTranslation("customDate", fmt.Sprintf("{0} must be valid (YYYY-MM-DD or YYYY-MM-DD:YYYY-MM-DD)"))
-	if err != nil {
-		return err
-	}
-
-	// Add translation for "customRangeDate"
-	err = customValidator.AddTranslation("customRangeDate", fmt.Sprintf("{0} must be valid the first date must be less than the second date"))
 	if err != nil {
 		return err
 	}

@@ -1,11 +1,34 @@
-package endpoints
+package validation
 
 import (
 	"github.com/go-playground/validator/v10"
 	"regexp"
 	"strings"
 	"time"
+	"unicode"
 )
+
+// UsernameValidator Custom validator function for username.
+func UsernameValidator(fl validator.FieldLevel) bool {
+	username := fl.Field().String()
+	if len(username) == 0 {
+		return false
+	}
+
+	// Check if the first character is a letter
+	if !unicode.IsLetter(rune(username[0])) {
+		return false
+	}
+
+	// Check if all characters are alphanumeric
+	for _, char := range username {
+		if !unicode.IsLetter(char) && !unicode.IsDigit(char) {
+			return false
+		}
+	}
+
+	return true
+}
 
 // Regexp for validating date
 var validDate = regexp.MustCompile(`^\d{4}-\d{2}-\d{2}$`)
@@ -26,16 +49,15 @@ func DateValidator(fl validator.FieldLevel) bool {
 	return err == nil
 }
 
-func CustomDateValidator(fl validator.FieldLevel) bool {
+// DateRangeValidator Custom validator function for date range
+func DateRangeValidator(fl validator.FieldLevel) bool {
 	dateString := fl.Field().String()
 
-	// Разделяем строку на компоненты диапазона, если есть ":"
 	dateComponents := strings.Split(dateString, ":")
 	if len(dateComponents) > 2 {
 		return false
 	}
 
-	// Проверяем каждую компоненту на соответствие формату даты
 	for _, date := range dateComponents {
 		_, err := time.Parse("2006-01-02", date)
 		if err != nil {
@@ -43,14 +65,13 @@ func CustomDateValidator(fl validator.FieldLevel) bool {
 		}
 	}
 
-	// Если все компоненты прошли проверку, возвращаем true
 	return true
 }
 
-func CustomDateRangeValidator(fl validator.FieldLevel) bool {
+// DateRangeCorrectValidator Custom validator function for date range
+func DateRangeCorrectValidator(fl validator.FieldLevel) bool {
 	dateString := fl.Field().String()
 
-	// Разделяем строку на компоненты диапазона, если есть ":"
 	dateComponents := strings.Split(dateString, ":")
 	if len(dateComponents) != 2 {
 		// Если это не диапазон, сразу возвращаем true

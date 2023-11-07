@@ -20,8 +20,6 @@ type Service interface {
 }
 
 // Repository is a repository for domain service
-//
-//go:generate mockgen -source=interfaces.go -destination=mocks/mock_repository.go -package=mocks
 type Repository interface {
 	FilmRepository
 	GenreRepository

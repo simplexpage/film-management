@@ -52,6 +52,7 @@ func (r *ViewFilmRequest) Validate() error {
 		return err
 	}
 
+	// Validate form
 	return customValidator.Validate(r)
 }
 

@@ -4,7 +4,6 @@ import (
 	"context"
 	"film-management/internal/user/domain"
 	"film-management/pkg/validation"
-	"fmt"
 	"github.com/go-kit/kit/endpoint"
 	"time"
 )
@@ -39,18 +38,6 @@ type LoginRequest struct {
 func (r *LoginRequest) Validate() error {
 	// Get custom validator
 	customValidator, err := validation.GetValidator()
-	if err != nil {
-		return err
-	}
-
-	// Register custom validator "username"
-	err = customValidator.GetValidate().RegisterValidation("username", UsernameValidator)
-	if err != nil {
-		return err
-	}
-
-	// Add translation for "username"
-	err = customValidator.AddTranslation("username", fmt.Sprintf("{0} must be valid (alphanumeric starting with letter)"))
 	if err != nil {
 		return err
 	}
