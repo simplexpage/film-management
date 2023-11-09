@@ -2,14 +2,16 @@ package response
 
 import (
 	"context"
-	"errors"
+	customError "film-management/pkg/errors"
 	transportHttp "film-management/pkg/transport/http"
 	"film-management/pkg/validation"
 	endpointKit "github.com/go-kit/kit/endpoint"
 	"github.com/go-playground/validator/v10"
 	"github.com/gorilla/mux"
 	jsoniter "github.com/json-iterator/go"
+	"github.com/pkg/errors"
 	"net/http"
+	"strings"
 )
 
 // SuccessResponse is the common struct for all success responses.
@@ -33,12 +35,12 @@ type ErrorResponseValidation struct {
 }
 
 // EncodeHTTPResponse is the common method to encode all success responses to the HTTP response.
-func EncodeHTTPResponse(ctx context.Context, w http.ResponseWriter, response interface{}) (err error) {
+func EncodeHTTPResponse(ctx context.Context, w http.ResponseWriter, response interface{}) error {
 	// Check if response is Failer interface and encode error
 	if f, ok := response.(endpointKit.Failer); ok && f.Failed() != nil {
-		EncodeError(ctx, errorToCodeHTTPAnswer(f.Failed()), f.Failed(), w)
+		EncodeError(ctx, f.Failed(), w)
 
-		return
+		return nil
 	}
 
 	// Set Content-Type header
@@ -56,33 +58,109 @@ func EncodeHTTPResponse(ctx context.Context, w http.ResponseWriter, response int
 }
 
 // EncodeError is the default error handler. It encodes errors to the HTTP response.
-func EncodeError(ctx context.Context, code int, err error, w http.ResponseWriter) {
-	// Check if error is Validation Errors
-	validationErr := errorsValidationMap(err)
-	if len(validationErr) > 0 {
-		encodeValidation(ctx, validationErr, w)
-
-		return
-	}
-
-	// Check if error is NotFoundError
-	if errors.As(err, &validation.NotFoundError{}) {
-		code = http.StatusNotFound
-	}
-
+func EncodeError(_ context.Context, err error, w http.ResponseWriter) {
 	// Set Content-Type header
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	w.WriteHeader(code)
-
 	// Error response
-	data := ErrorResponse{
-		Code:    code,
-		Message: err.Error(),
-	}
+	data, code := createErrorResponse(err)
+	w.WriteHeader(code)
 
 	if errEncode := jsoniter.NewEncoder(w).Encode(data); errEncode != nil {
 		return
 	}
+}
+
+// createErrorResponse is the common method to create all error responses.
+func createErrorResponse(err error) (data interface{}, code int) {
+	// Check if error is Validation Errors and convert to map
+	validationErr := errorsValidationMap(err)
+
+	switch {
+	case len(validationErr) > 0:
+		data, code = handleValidationErrors(validationErr)
+	case errors.Is(err, transportHttp.ErrBadRouting),
+		errors.Is(err, transportHttp.ErrJSONDecode):
+		data, code = handleBadRequestErrors(err)
+	case errors.Is(err, transportHttp.ErrNotFound),
+		errors.As(err, &customError.NotFoundError{}):
+		data, code = handleNotFoundError(err)
+	case errors.As(err, &customError.AuthError{}):
+		data, code = handleAuthErrors(err)
+	case errors.As(err, &customError.CorsError{}) ||
+		errors.As(err, &customError.PermissionError{}):
+		data, code = handlePermissionErrors(err)
+	default:
+		data, code = handleDefaultErrors(err)
+	}
+
+	return
+}
+
+// handleAuthErrors is the common method to handle all auth errors.
+func handleAuthErrors(err error) (data interface{}, code int) {
+	data = ErrorResponse{
+		Code:    http.StatusUnauthorized,
+		Message: err.Error(),
+	}
+	code = http.StatusUnauthorized
+
+	return
+}
+
+// handlePermissionErrors is the common method to handle all permission errors.
+func handlePermissionErrors(err error) (data interface{}, code int) {
+	data = ErrorResponse{
+		Code:    http.StatusForbidden,
+		Message: err.Error(),
+	}
+	code = http.StatusForbidden
+
+	return
+}
+
+// handleValidationErrors is the common method to handle all validation errors.
+func handleValidationErrors(validationErr map[string]string) (data interface{}, code int) {
+	data = ErrorResponseValidation{
+		Code:    http.StatusUnprocessableEntity,
+		Message: transportHttp.ErrDataValidation.Error(),
+		Data:    validationErr,
+	}
+	code = http.StatusUnprocessableEntity
+
+	return
+}
+
+// handleBadRequestErrors is the common method to handle all bad request errors.
+func handleBadRequestErrors(err error) (data interface{}, code int) {
+	data = ErrorResponse{
+		Code:    http.StatusBadRequest,
+		Message: err.Error(),
+	}
+	code = http.StatusBadRequest
+
+	return
+}
+
+// handleNotFoundError is the common method to handle all not found errors.
+func handleNotFoundError(err error) (data interface{}, code int) {
+	data = ErrorResponse{
+		Code:    http.StatusNotFound,
+		Message: err.Error(),
+	}
+	code = http.StatusNotFound
+
+	return
+}
+
+// handleDefaultErrors is the common method to handle all default errors.
+func handleDefaultErrors(err error) (data interface{}, code int) {
+	data = ErrorResponse{
+		Code:    http.StatusInternalServerError,
+		Message: err.Error(),
+	}
+	code = http.StatusInternalServerError
+
+	return
 }
 
 // errorsValidationMap convert Validation Errors to map.
@@ -91,69 +169,18 @@ func errorsValidationMap(err error) map[string]string {
 
 	var (
 		validationErrors validator.ValidationErrors
-		customError      validation.CustomError
+		validationError  customError.ValidationError
 	)
 
 	if errors.As(err, &validationErrors) {
 		for _, fieldError := range validationErrors {
-			result[fieldError.Field()] = fieldError.Translate(validation.GetTranslator())
+			result[strings.ToLower(fieldError.Field())] = fieldError.Translate(validation.GetTranslator())
 		}
-	} else if errors.As(err, &customError) {
-		result[customError.Field] = customError.Err.Error()
+	} else if errors.As(err, &validationError) {
+		result[validationError.Field] = validationError.Err.Error()
 	}
 
 	return result
-}
-
-// encodeValidation is the default error handler. It encodes errors to the HTTP response.
-func encodeValidation(_ context.Context, validationErr map[string]string, w http.ResponseWriter) {
-	// Set Content-Type header
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	w.WriteHeader(http.StatusUnprocessableEntity)
-
-	// Error response validation
-	data := ErrorResponseValidation{
-		Code:    http.StatusUnprocessableEntity,
-		Message: transportHttp.ErrDataValidation.Error(),
-		Data:    validationErr,
-	}
-
-	errEncode := jsoniter.NewEncoder(w).Encode(data)
-
-	if errEncode != nil {
-		return
-	}
-}
-
-// EncodeServerError is the default error handler. It encodes errors to the HTTP response.
-func EncodeServerError(_ context.Context, err error, w http.ResponseWriter) {
-	// Set Content-Type header
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	w.WriteHeader(errorToCodeHTTPAnswer(err))
-
-	// Error response
-	data := ErrorResponse{
-		Code:    errorToCodeHTTPAnswer(err),
-		Message: err.Error(),
-	}
-
-	if errEncode := jsoniter.NewEncoder(w).Encode(data); errEncode != nil {
-		return
-	}
-}
-
-// errorToCodeHTTPAnswer convert error to HTTP code.
-func errorToCodeHTTPAnswer(err error) int {
-	switch {
-	case errors.Is(err, transportHttp.ErrBadRouting) ||
-		errors.Is(err, transportHttp.ErrContextUserID) ||
-		errors.Is(err, transportHttp.ErrJSONDecode):
-		return http.StatusBadRequest
-	case errors.Is(err, transportHttp.ErrNotFound):
-		return http.StatusNotFound
-	default:
-		return http.StatusInternalServerError
-	}
 }
 
 // SetErrorHandlers is the default error handler. It encodes errors to the HTTP response.

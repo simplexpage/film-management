@@ -25,7 +25,7 @@ type UserRepository interface {
 
 type PasswordService interface {
 	GeneratePasswordHash(password string) (string, error)
-	ComparePasswordHash(password, hash string) bool
+	ComparePasswordHash(password, hash string) error
 }
 
 type AuthService interface {

@@ -1,9 +1,9 @@
-package middlewares_test
+package auth_test
 
 import (
 	"film-management/config"
-	"film-management/pkg/transport/http/middlewares"
-	"film-management/repositories/services"
+	auth2 "film-management/pkg/auth"
+	"film-management/pkg/transport/http/middlewares/auth"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	ConfigPath = "../../../../config"
+	ConfigPath = "../../../../../config"
 )
 
 func TestAuthMiddleware(t *testing.T) {
@@ -31,7 +31,7 @@ func TestAuthMiddleware(t *testing.T) {
 	var (
 		logger      = zap.NewNop()
 		notAuthURLs = []string{"/public", "/login"}
-		authService = services.NewAuthService(cfg.Services.Auth, logger)
+		authService = auth2.NewAuthService(cfg.Services.Auth, logger)
 	)
 
 	token, _, err := authService.GenerateAuthToken("d83d97ab-ff68-4de2-b2a9-7cd5f0fc9a5e")
@@ -43,13 +43,13 @@ func TestAuthMiddleware(t *testing.T) {
 		w.WriteHeader(http.StatusOK)
 	})
 
-	handler := middlewares.AuthMiddleware(notAuthURLs, authService)(authHandler)
+	handler := auth.Middleware(notAuthURLs, authService)(authHandler)
 
 	testCases := []testCase{
 		{
 			name:           "ValidToken",
 			url:            "/protected",
-			authToken:      middlewares.AuthorizationPrefix + " " + token,
+			authToken:      auth.AuthorizationPrefix + " " + token,
 			expectedStatus: http.StatusOK,
 		},
 		{

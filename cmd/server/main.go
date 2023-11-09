@@ -11,10 +11,11 @@ import (
 	domainUser "film-management/internal/user/domain"
 	userEndpoint "film-management/internal/user/endpoints"
 	httpUserHandler "film-management/internal/user/transport/http"
+	"film-management/pkg/auth"
 	"film-management/pkg/database/postgresql"
 	"film-management/pkg/logger"
+	"film-management/pkg/password"
 	"film-management/pkg/transport/http/response"
-	"film-management/repositories/services"
 	filmRepo "film-management/repositories/storage/postgres/film"
 	userRepo "film-management/repositories/storage/postgres/user"
 	"flag"
@@ -86,13 +87,13 @@ func main() {
 	// Init Repositories
 	var (
 		// User repository
-		userRepository = userRepo.NewRepository(postgresClientDB, log)
+		userRepository = userRepo.NewUserRepository(postgresClientDB, log)
 		// Film repository
-		filmRepository = filmRepo.NewRepository(postgresClientDB, log)
+		filmRepository = filmRepo.NewFilmRepository(postgresClientDB, log)
 		// Password service
-		passwordService = services.NewPasswordService(log)
+		passwordService = password.NewPasswordService(log)
 		// Auth service
-		authService = services.NewAuthService(cfg.Services.Auth, log)
+		authService = auth.NewAuthService(cfg.Services.Auth, log)
 	)
 
 	// Init services

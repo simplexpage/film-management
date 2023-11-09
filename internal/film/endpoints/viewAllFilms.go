@@ -4,6 +4,7 @@ import (
 	"context"
 	"film-management/internal/film/domain"
 	"film-management/internal/film/domain/models"
+	customError "film-management/pkg/errors"
 	"film-management/pkg/query"
 	"film-management/pkg/query/pagination"
 	"film-management/pkg/query/sort"
@@ -20,7 +21,7 @@ func MakeViewAllFilmsEndpoint(s domain.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
 		reqForm, ok := request.(ViewAllFilmsRequest)
 		if !ok {
-			return ViewAllFilmsResponse{}, ErrInvalidRequest
+			return ViewAllFilmsResponse{}, customError.ErrInvalidRequest
 		}
 
 		// Validate form
@@ -98,7 +99,7 @@ func (r *ViewAllFilmsRequest) Validate() error {
 
 // ViewAllFilmsResponse is a response for ViewAllFilms.
 type ViewAllFilmsResponse struct {
-	Items      []ItemAllFilms        `json:"items,omitempty"`
+	Items      []ItemAllFilms        `json:"items"`
 	Pagination pagination.Pagination `json:"pagination,omitempty"`
 	Err        error                 `json:"err,omitempty" swaggerignore:"true"`
 }
@@ -108,15 +109,15 @@ func (r ViewAllFilmsResponse) Failed() error { return r.Err }
 
 // ItemAllFilms is a response for ViewAllFilms.
 type ItemAllFilms struct {
-	UUID        uuid.UUID `json:"uuid"`
-	Title       string    `json:"title"`
-	Director    string    `json:"director"`
-	Genres      []string  `json:"genres"`
-	ReleaseDate string    `json:"release_date"`
-	Casts       []string  `json:"casts"`
-	Synopsis    string    `json:"synopsis"`
-	CreatedAt   string    `json:"created_at"`
-	UpdatedAt   string    `json:"updated_at"`
+	UUID        uuid.UUID `json:"uuid" example:"550e8400-e29b-41d4-a716-446655440000"`
+	Title       string    `json:"title" example:"Garry Potter"`
+	Director    string    `json:"director" example:"John Doe"`
+	Genres      []string  `json:"genres" example:"action,adventure,sci-fi"`
+	ReleaseDate string    `json:"release_date" example:"2021-01-01"`
+	Casts       []string  `json:"casts" example:"John Doe,Jane Doe,Foo Bar"`
+	Synopsis    string    `json:"synopsis" example:"This is a synopsis."`
+	CreatedAt   string    `json:"created_at" example:"2021-01-01 00:00:00"`
+	UpdatedAt   string    `json:"updated_at" example:"2021-01-01 00:00:00"`
 }
 
 // domainAllFilmItemsToAllItemFilms is a function to convert domain film items to all item films.
@@ -171,7 +172,7 @@ func getFilterOptions(reqForm ViewAllFilmsRequest) (query.Filter, error) {
 		if strings.Contains(reqForm.ReleaseDate, ":") {
 			split := strings.Split(reqForm.ReleaseDate, ":")
 			if len(split) != 2 {
-				return nil, validation.CustomError{Field: "release_date", Err: fmt.Errorf("invalid date range format: %s", reqForm.ReleaseDate)}
+				return nil, customError.ValidationError{Field: "release_date", Err: fmt.Errorf("invalid date range format: %s", reqForm.ReleaseDate)}
 			}
 
 			myFilter["release_date"] = []string{split[0], split[1]}

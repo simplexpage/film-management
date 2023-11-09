@@ -2,7 +2,8 @@ package http
 
 import (
 	"film-management/config"
-	"film-management/pkg/transport/http/middlewares"
+	"film-management/pkg/transport/http/middlewares/cors"
+	"film-management/pkg/transport/http/middlewares/recovery"
 	"film-management/pkg/transport/http/response"
 	"github.com/gorilla/mux"
 	httpSwagger "github.com/swaggo/http-swagger"
@@ -36,10 +37,10 @@ func NewHTTPHandlers(cfg *config.Config, logger *zap.Logger) http.Handler {
 
 	// CORS
 	r.Use(mux.CORSMethodMiddleware(r))
-	r.Use(middlewares.CORSMiddleware(cfg.HTTP.CorsAllowedOrigins, logger))
+	r.Use(cors.Middleware(cfg.HTTP.CorsAllowedOrigins, logger))
 
 	// Recovery
-	r.Use(middlewares.RecoveryMiddleware(logger))
+	r.Use(recovery.Middleware(logger))
 
 	// Routes
 	//

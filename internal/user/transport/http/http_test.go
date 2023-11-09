@@ -7,7 +7,7 @@ import (
 	"film-management/internal/user/domain/mocks"
 	"film-management/internal/user/endpoints"
 	userHttp "film-management/internal/user/transport/http"
-	"film-management/pkg/validation"
+	customError "film-management/pkg/errors"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap"
@@ -50,7 +50,7 @@ func TestRegisterHandler(t *testing.T) {
 				r.EXPECT().Register(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 			},
 			expectedStatusCode: http.StatusOK,
-			expectedResponse:   `{"code":200,"data":{},"message":"OK"}`,
+			expectedResponse:   `{"code":200,"data":{"uuid":"00000000-0000-0000-0000-000000000000","username":"user1"},"message":"OK"}`,
 		},
 		{
 			name: "json decode error",
@@ -68,7 +68,7 @@ func TestRegisterHandler(t *testing.T) {
 			},
 			mockServiceBehavior: func(r *mocks.MockService) {},
 			expectedStatusCode:  http.StatusUnprocessableEntity,
-			expectedResponse:    `{"code":422,"message":"data validation error","data":{"Username":"Username is required"}}`,
+			expectedResponse:    `{"code":422,"message":"data validation error","data":{"username":"Username is required"}}`,
 		},
 		{
 			name: "validation error password required",
@@ -77,7 +77,7 @@ func TestRegisterHandler(t *testing.T) {
 			},
 			mockServiceBehavior: func(r *mocks.MockService) {},
 			expectedStatusCode:  http.StatusUnprocessableEntity,
-			expectedResponse:    `{"code":422,"message":"data validation error","data":{"Password":"Password is required"}}`,
+			expectedResponse:    `{"code":422,"message":"data validation error","data":{"password":"Password is required"}}`,
 		},
 		{
 			name: "validation error user username exists",
@@ -85,7 +85,7 @@ func TestRegisterHandler(t *testing.T) {
 				body: `{"username":"user1","password":"12345678"}`,
 			},
 			mockServiceBehavior: func(r *mocks.MockService) {
-				r.EXPECT().Register(gomock.Any(), gomock.Any()).Return(validation.CustomError{Field: "username", Err: domain.ErrUserExistsWithUsername}).AnyTimes()
+				r.EXPECT().Register(gomock.Any(), gomock.Any()).Return(customError.ValidationError{Field: "username", Err: domain.ErrUserExistsWithUsername}).AnyTimes()
 			},
 			expectedStatusCode: http.StatusUnprocessableEntity,
 			expectedResponse:   `{"code":422,"message":"data validation error","data":{"username":"user already exists with the same username"}}`,

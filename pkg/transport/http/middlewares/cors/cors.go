@@ -1,9 +1,10 @@
-package middlewares
+package cors
 
 import (
-	"errors"
+	customError "film-management/pkg/errors"
 	httpTransport "film-management/pkg/transport/http/response"
 	"github.com/gorilla/mux"
+	"github.com/pkg/errors"
 	"go.uber.org/zap"
 	"net/http"
 )
@@ -13,11 +14,11 @@ const (
 )
 
 var (
-	ErrInvalidOriginCORS = errors.New("origin is wrong")
+	ErrInvalidOriginCORS = errors.New("forbidden - Origin is not allowed")
 )
 
-// CORSMiddleware is a middleware for CORS.
-func CORSMiddleware(corsAllowedOrigins []string, logger *zap.Logger) mux.MiddlewareFunc {
+// Middleware is a middleware for CORS.
+func Middleware(corsAllowedOrigins []string, logger *zap.Logger) mux.MiddlewareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("Access-Control-Allow-Headers", "Origin, Content-Type, Authorization")
@@ -27,7 +28,7 @@ func CORSMiddleware(corsAllowedOrigins []string, logger *zap.Logger) mux.Middlew
 			if origin != "" {
 				logger.Debug("origin", zap.String("origin", origin))
 				if !contains(corsAllowedOrigins, origin) {
-					httpTransport.EncodeError(r.Context(), http.StatusBadRequest, ErrInvalidOriginCORS, w)
+					httpTransport.EncodeError(r.Context(), customError.CorsError{Err: ErrInvalidOriginCORS}, w)
 
 					return
 				}

@@ -2,7 +2,7 @@ package pagination
 
 import (
 	"errors"
-	"film-management/pkg/validation"
+	customError "film-management/pkg/errors"
 	"math"
 )
 
@@ -71,7 +71,7 @@ func GetOffsetOption(offset int) (int, error) {
 // validateOffset validates offset.
 func validateOffset(offset int) error {
 	if offset < -1 {
-		return validation.CustomError{Field: "offset", Err: ErrOffsetQueryParameterIsNoValidNumber}
+		return customError.ValidationError{Field: "offset", Err: ErrOffsetQueryParameterIsNoValidNumber}
 	}
 
 	return nil
@@ -80,7 +80,7 @@ func validateOffset(offset int) error {
 // validateLimit validates limit.
 func validateLimit(limit int) error {
 	if limit < -1 {
-		return validation.CustomError{Field: "limit", Err: ErrLimitQueryParameterIsNoValidNumber}
+		return customError.ValidationError{Field: "limit", Err: ErrLimitQueryParameterIsNoValidNumber}
 	}
 
 	return nil

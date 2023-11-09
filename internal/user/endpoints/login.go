@@ -3,6 +3,7 @@ package endpoints
 import (
 	"context"
 	"film-management/internal/user/domain"
+	"film-management/pkg/errors"
 	"film-management/pkg/validation"
 	"github.com/go-kit/kit/endpoint"
 	"time"
@@ -13,7 +14,7 @@ func MakeLoginEndpoint(s domain.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
 		reqForm, ok := request.(LoginRequest)
 		if !ok {
-			return LoginResponse{}, ErrInvalidRequest
+			return LoginResponse{}, errors.ErrInvalidRequest
 		}
 
 		// Validate form
@@ -48,8 +49,8 @@ func (r *LoginRequest) Validate() error {
 
 // LoginResponse is a response for Login.
 type LoginResponse struct {
-	AuthToken string    `json:"auth_token"`
-	ExpiredAt time.Time `json:"expired_at"`
+	AuthToken string    `json:"auth_token,omitempty" example:"eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1dWlkIj"`
+	ExpiredAt time.Time `json:"expired_at,omitempty" example:"2023-11-09T15:21:15.973955426Z"`
 	Err       error     `json:"err,omitempty" swaggerignore:"true"`
 }
 

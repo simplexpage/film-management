@@ -2,10 +2,10 @@ package user
 
 import (
 	"context"
-	"errors"
 	"film-management/internal/user/domain"
 	"film-management/internal/user/domain/models"
 	"github.com/google/uuid"
+	"github.com/pkg/errors"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
@@ -16,8 +16,8 @@ type Repository struct {
 	logger *zap.Logger
 }
 
-// NewRepository is a constructor for Repository.
-func NewRepository(db *gorm.DB, logger *zap.Logger) *Repository {
+// NewUserRepository is a constructor for Repository.
+func NewUserRepository(db *gorm.DB, logger *zap.Logger) *Repository {
 	return &Repository{
 		db:     db,
 		logger: logger,
@@ -27,9 +27,9 @@ func NewRepository(db *gorm.DB, logger *zap.Logger) *Repository {
 // CreateUser is a method to create user.
 func (r Repository) CreateUser(ctx context.Context, user *models.User) error {
 	if err := r.db.WithContext(ctx).Create(user).Error; err != nil {
-		r.logger.Error("failed to add a new user in db", zap.Error(err))
+		r.logger.Error("userRepo.CreateUser.Create", zap.Error(err))
 
-		return domain.ErrUserCreate
+		return errors.Wrap(err, "userRepo.CreateUser.Create")
 	}
 
 	return nil
@@ -41,12 +41,11 @@ func (r Repository) FindOneUserByUUID(ctx context.Context, uuid uuid.UUID) (mode
 
 	if result := r.db.WithContext(ctx).Where("uuid = ?", uuid).First(&user); result.Error != nil {
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-			return models.User{}, domain.ErrUserNotFound
+			return models.User{}, errors.Wrap(domain.ErrUserNotFound, "userRepo.FindOneUserByUUID.First")
 		}
+		r.logger.Error("userRepo.FindOneUserByUUID.First", zap.Error(result.Error))
 
-		r.logger.Error("failed to find user in db", zap.Error(result.Error))
-
-		return models.User{}, domain.ErrUserFind
+		return models.User{}, errors.Wrap(result.Error, "userRepo.FindOneUserByUUID.First")
 	}
 
 	return user, nil
@@ -58,18 +57,17 @@ func (r Repository) FindOneUserByUsername(ctx context.Context, username string) 
 
 	if result := r.db.WithContext(ctx).Where("username = ?", username).First(&user); result.Error != nil {
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-			return models.User{}, domain.ErrUserNotFound
+			return models.User{}, errors.Wrap(domain.ErrUserNotFound, "userRepo.FindOneUserByUsername.First")
 		}
+		r.logger.Error("userRepo.FindOneUserByUsername.First", zap.Error(result.Error))
 
-		r.logger.Error("failed to find user in db", zap.Error(result.Error))
-
-		return models.User{}, domain.ErrUserFind
+		return models.User{}, errors.Wrap(result.Error, "userRepo.FindOneUserByUsername.First")
 	}
 
 	return user, nil
 }
 
-// UserExistsWithUsername checks if an user with the given username exists.
+// UserExistsWithUsername checks if a user with the given username exists.
 func (r Repository) UserExistsWithUsername(ctx context.Context, username string) error {
 	var count int64
 
@@ -82,13 +80,14 @@ func (r Repository) UserExistsWithUsername(ctx context.Context, username string)
 		Error
 
 	if err != nil {
-		r.logger.Error("failed to check user existence by username in db", zap.Error(err))
+		r.logger.Error("userRepo.UserExistsWithUsername.Count", zap.Error(err))
 
-		return domain.ErrUserCheckExistence
+		return errors.Wrap(err, "userRepo.UserExistsWithUsername.Count")
 	}
 
+	// If count > 0, then a user with the same username exists
 	if count > 0 {
-		return domain.ErrUserExistsWithUsername
+		return errors.Wrap(domain.ErrUserExistsWithUsername, "userRepo.UserExistsWithUsername.Count")
 	}
 
 	return nil

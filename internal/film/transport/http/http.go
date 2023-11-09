@@ -5,10 +5,12 @@ import (
 	"film-management/config"
 	httpCommon "film-management/internal/common/transport/http"
 	"film-management/internal/film/endpoints"
-	"film-management/pkg/auth"
 	httpTransport "film-management/pkg/transport/http"
-	"film-management/pkg/transport/http/middlewares"
+	"film-management/pkg/transport/http/middlewares/auth"
+	"film-management/pkg/transport/http/middlewares/cors"
+	"film-management/pkg/transport/http/middlewares/recovery"
 	"film-management/pkg/transport/http/response"
+	"film-management/pkg/utils"
 	httpKitTransport "github.com/go-kit/kit/transport/http"
 	"github.com/gorilla/mux"
 	jsoniter "github.com/json-iterator/go"
@@ -22,10 +24,10 @@ const (
 )
 
 // NewHTTPHandlers is a function that returns a http.Handler that makes a set of endpoints available on predefined paths.
-func NewHTTPHandlers(endpoints endpoints.SetEndpoints, authService middlewares.AuthService, cfg *config.Config, logger *zap.Logger) http.Handler {
+func NewHTTPHandlers(endpoints endpoints.SetEndpoints, authService auth.Service, cfg *config.Config, logger *zap.Logger) http.Handler {
 	options := []httpKitTransport.ServerOption{
 		httpKitTransport.ServerErrorHandler(httpTransport.NewLogErrorHandler(logger)),
-		httpKitTransport.ServerErrorEncoder(response.EncodeServerError),
+		httpKitTransport.ServerErrorEncoder(response.EncodeError),
 	}
 
 	// Handlers
@@ -69,13 +71,13 @@ func NewHTTPHandlers(endpoints endpoints.SetEndpoints, authService middlewares.A
 
 	// CORS
 	r.Use(mux.CORSMethodMiddleware(r))
-	r.Use(middlewares.CORSMiddleware(cfg.HTTP.CorsAllowedOrigins, logger))
+	r.Use(cors.Middleware(cfg.HTTP.CorsAllowedOrigins, logger))
 
 	// Recovery
-	r.Use(middlewares.RecoveryMiddleware(logger))
+	r.Use(recovery.Middleware(logger))
 
 	// AUTH
-	r.Use(middlewares.AuthMiddleware(cfg.HTTP.NotAuthUrls, authService))
+	r.Use(auth.Middleware(cfg.HTTP.NotAuthUrls, authService))
 
 	// Routes
 
@@ -111,12 +113,12 @@ func NewHTTPHandlers(endpoints endpoints.SetEndpoints, authService middlewares.A
 // @Failure 401 {object} response.ErrorResponse "Unauthorized"
 // @Failure 422 {object} response.ErrorResponseValidation "Data Validation Failed"
 // @Failure 500 {object} response.ErrorResponse "Internal Server Error"
-// @Router /api/v1/films/ [post] .
+// @Router /films/ [post] .
 func decodeHTTPAddFilmRequest(_ context.Context, r *http.Request) (request interface{}, err error) {
 	var reqForm endpoints.AddFilmRequest
 
 	// Get UserID from context
-	userID, errUserID := auth.GetUserIDFromContext(r.Context())
+	userID, errUserID := utils.GetValueFromContext(r.Context(), auth.ContextKeyUserID)
 	if errUserID != nil {
 		return nil, httpTransport.ErrContextUserID
 	}
@@ -139,14 +141,16 @@ func decodeHTTPAddFilmRequest(_ context.Context, r *http.Request) (request inter
 // @Security ApiKeyAuth
 // @Accept  json
 // @Produce  json
-// @Param uuid path string true "Film UUID"
+// @Param id path string true "Film UUID"
 // @Param form body endpoints.UpdateFilmRequest true "Update film form"
 // @Success 200 {object} response.SuccessResponse{data=endpoints.UpdateFilmResponse} "Success"
 // @Failure 400 {object} response.ErrorResponse	"Bad Request"
 // @Failure 401 {object} response.ErrorResponse "Unauthorized"
+// @Failure 403 {object} response.ErrorResponse "Forbidden"
+// @Failure 404 {object} response.ErrorResponse "Not Found"
 // @Failure 422 {object} response.ErrorResponseValidation "Data Validation Failed"
 // @Failure 500 {object} response.ErrorResponse "Internal Server Error"
-// @Router /api/v1/films/{id} [put] .
+// @Router /films/{id} [put] .
 func decodeHTTPUpdateFilmRequest(_ context.Context, r *http.Request) (request interface{}, err error) {
 	var reqForm endpoints.UpdateFilmRequest
 
@@ -157,7 +161,7 @@ func decodeHTTPUpdateFilmRequest(_ context.Context, r *http.Request) (request in
 	}
 
 	// Get UserID from context
-	userID, errUserID := auth.GetUserIDFromContext(r.Context())
+	userID, errUserID := utils.GetValueFromContext(r.Context(), auth.ContextKeyUserID)
 	if errUserID != nil {
 		return nil, httpTransport.ErrContextUserID
 	}
@@ -181,13 +185,13 @@ func decodeHTTPUpdateFilmRequest(_ context.Context, r *http.Request) (request in
 // @Security ApiKeyAuth
 // @Accept  json
 // @Produce  json
-// @Param uuid path string true "Film UUID"
+// @Param id path string true "Film UUID"
 // @Success 200 {object} response.SuccessResponse{data=endpoints.ViewFilmResponse} "Success"
 // @Failure 400 {object} response.ErrorResponse	"Bad Request"
 // @Failure 401 {object} response.ErrorResponse "Unauthorized"
 // @Failure 404 {object} response.ErrorResponse "Not Found"
 // @Failure 500 {object} response.ErrorResponse "Internal Server Error"
-// @Router /api/v1/films/{id} [get] .
+// @Router /films/{id} [get] .
 func decodeHTTPViewFilmRequest(_ context.Context, r *http.Request) (request interface{}, err error) {
 	// Get UUID from path
 	uuidFromPath, err := httpTransport.GetValueFromPath(r, "id")
@@ -216,7 +220,7 @@ func decodeHTTPViewFilmRequest(_ context.Context, r *http.Request) (request inte
 // @Failure 401 {object} response.ErrorResponse "Unauthorized"
 // @Failure 422 {object} response.ErrorResponseValidation "Data Validation Failed"
 // @Failure 500 {object} response.ErrorResponse "Internal Server Error"
-// @Router /api/v1/films/ [get] .
+// @Router /films [get] .
 func decodeHTTPViewAllFilmsRequest(_ context.Context, r *http.Request) (request interface{}, err error) {
 	var req endpoints.ViewAllFilmsRequest
 
@@ -251,14 +255,15 @@ func decodeHTTPViewAllFilmsRequest(_ context.Context, r *http.Request) (request 
 // @Security ApiKeyAuth
 // @Accept  json
 // @Produce  json
-// @Param uuid path string true "Film UUID"
+// @Param id path string true "Film UUID"
 // @Success 200 {object} response.SuccessResponse{data=endpoints.DeleteFilmResponse} "Success"
 // @Failure 400 {object} response.ErrorResponse	"Bad Request"
 // @Failure 401 {object} response.ErrorResponse "Unauthorized"
+// @Failure 403 {object} response.ErrorResponse "Forbidden"
 // @Failure 404 {object} response.ErrorResponse "Not Found"
 // @Failure 422 {object} response.ErrorResponseValidation "Data Validation Failed"
 // @Failure 500 {object} response.ErrorResponse "Internal Server Error"
-// @Router /api/v1/films/{id} [delete] .
+// @Router /films/{id} [delete] .
 func decodeHTTPDeleteFilmRequest(_ context.Context, r *http.Request) (request interface{}, err error) {
 	// Get UUID from path
 	uuidFromPath, err := httpTransport.GetValueFromPath(r, "id")
@@ -267,7 +272,7 @@ func decodeHTTPDeleteFilmRequest(_ context.Context, r *http.Request) (request in
 	}
 
 	// Get UserID from context
-	userID, err := auth.GetUserIDFromContext(r.Context())
+	userID, err := utils.GetValueFromContext(r.Context(), auth.ContextKeyUserID)
 	if err != nil {
 		return nil, httpTransport.ErrContextUserID
 	}

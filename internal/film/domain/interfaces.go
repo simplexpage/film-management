@@ -34,7 +34,7 @@ type FilmRepository interface {
 	FindOneFilmForViewByUUID(ctx context.Context, uuid uuid.UUID) (models.Film, error)
 	FindAllFilms(ctx context.Context, filterSortPagination query.FilterSortLimit) ([]models.Film, pagination.Pagination, error)
 	DeleteFilm(ctx context.Context, uuid uuid.UUID) error
-	FilmExists(ctx context.Context, title string, filmID uuid.UUID, operation models.Operation) error
+	FilmExistsWithTitle(ctx context.Context, title string, filmID uuid.UUID, operation models.Operation) error
 }
 
 // GenreRepository is a repository for genre.

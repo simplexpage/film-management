@@ -25,7 +25,8 @@ func (l loggingMiddleware) Register(ctx context.Context, model *models.User) (er
 	defer func() {
 		l.logger.With(zap.String("method", "Register")).
 			Debug("domain",
-				zap.Any("user", model),
+				zap.String("username", model.Username),
+				zap.String("password", model.Password),
 				zap.Error(err))
 	}()
 
@@ -38,6 +39,8 @@ func (l loggingMiddleware) Login(ctx context.Context, username string, password 
 			Debug("domain",
 				zap.String("username", username),
 				zap.String("password", password),
+				zap.String("authToken", authToken),
+				zap.Time("expirationTime", expirationTime),
 				zap.Error(err))
 	}()
 

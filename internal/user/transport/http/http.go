@@ -6,7 +6,8 @@ import (
 	httpCommon "film-management/internal/common/transport/http"
 	"film-management/internal/user/endpoints"
 	httpTransport "film-management/pkg/transport/http"
-	"film-management/pkg/transport/http/middlewares"
+	"film-management/pkg/transport/http/middlewares/cors"
+	"film-management/pkg/transport/http/middlewares/recovery"
 	"film-management/pkg/transport/http/response"
 	httpKitTransport "github.com/go-kit/kit/transport/http"
 	"github.com/gorilla/mux"
@@ -26,7 +27,7 @@ const (
 func NewHTTPHandlers(endpoints endpoints.SetEndpoints, cfg *config.Config, logger *zap.Logger) http.Handler {
 	options := []httpKitTransport.ServerOption{
 		httpKitTransport.ServerErrorHandler(httpTransport.NewLogErrorHandler(logger)),
-		httpKitTransport.ServerErrorEncoder(response.EncodeServerError),
+		httpKitTransport.ServerErrorEncoder(response.EncodeError),
 	}
 
 	// Handlers
@@ -51,10 +52,10 @@ func NewHTTPHandlers(endpoints endpoints.SetEndpoints, cfg *config.Config, logge
 
 	// CORS
 	r.Use(mux.CORSMethodMiddleware(r))
-	r.Use(middlewares.CORSMiddleware(cfg.HTTP.CorsAllowedOrigins, logger))
+	r.Use(cors.Middleware(cfg.HTTP.CorsAllowedOrigins, logger))
 
 	// Recovery
-	r.Use(middlewares.RecoveryMiddleware(logger))
+	r.Use(recovery.Middleware(logger))
 
 	// Routes
 

@@ -16,7 +16,7 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/api/v1/films/": {
+        "/films": {
             "get": {
                 "security": [
                     {
@@ -122,7 +122,9 @@ const docTemplate = `{
                         }
                     }
                 }
-            },
+            }
+        },
+        "/films/": {
             "post": {
                 "security": [
                     {
@@ -197,7 +199,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/films/{id}": {
+        "/films/{id}": {
             "get": {
                 "security": [
                     {
@@ -219,7 +221,7 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "Film UUID",
-                        "name": "uuid",
+                        "name": "id",
                         "in": "path",
                         "required": true
                     }
@@ -290,7 +292,7 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "Film UUID",
-                        "name": "uuid",
+                        "name": "id",
                         "in": "path",
                         "required": true
                     },
@@ -335,6 +337,18 @@ const docTemplate = `{
                             "$ref": "#/definitions/response.ErrorResponse"
                         }
                     },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
                     "422": {
                         "description": "Data Validation Failed",
                         "schema": {
@@ -370,7 +384,7 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "Film UUID",
-                        "name": "uuid",
+                        "name": "id",
                         "in": "path",
                         "required": true
                     }
@@ -402,6 +416,12 @@ const docTemplate = `{
                     },
                     "401": {
                         "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
                         "schema": {
                             "$ref": "#/definitions/response.ErrorResponse"
                         }
@@ -600,9 +620,9 @@ const docTemplate = `{
                     },
                     "example": [
                         "John Doe",
-                        " Jane Doe",
-                        " Foo Bar",
-                        " Baz Quux"
+                        "Jane Doe",
+                        "Foo Bar",
+                        "Baz Quux"
                     ]
                 },
                 "director": {
@@ -660,34 +680,51 @@ const docTemplate = `{
                     "type": "array",
                     "items": {
                         "type": "string"
-                    }
+                    },
+                    "example": [
+                        "John Doe",
+                        "Jane Doe",
+                        "Foo Bar"
+                    ]
                 },
                 "created_at": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "2021-01-01 00:00:00"
                 },
                 "director": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "John Doe"
                 },
                 "genres": {
                     "type": "array",
                     "items": {
                         "type": "string"
-                    }
+                    },
+                    "example": [
+                        "action",
+                        "adventure",
+                        "sci-fi"
+                    ]
                 },
                 "release_date": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "2021-01-01"
                 },
                 "synopsis": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "This is a synopsis."
                 },
                 "title": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "Garry Potter"
                 },
                 "updated_at": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "2021-01-01 00:00:00"
                 },
                 "uuid": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440000"
                 }
             }
         },
@@ -695,10 +732,12 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "username": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "test"
                 },
                 "uuid": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440000"
                 }
             }
         },
@@ -709,34 +748,52 @@ const docTemplate = `{
                     "type": "array",
                     "items": {
                         "type": "string"
-                    }
+                    },
+                    "example": [
+                        "John Doe",
+                        "Jane Doe",
+                        "Foo Bar",
+                        "Baz Quux"
+                    ]
                 },
                 "created_at": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "2021-01-01 00:00:00"
                 },
                 "director": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "John Doe"
                 },
                 "genres": {
                     "type": "array",
                     "items": {
                         "type": "string"
-                    }
+                    },
+                    "example": [
+                        "action",
+                        "adventure",
+                        "sci-fi"
+                    ]
                 },
                 "release_date": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "2021-01-01"
                 },
                 "synopsis": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "This is a synopsis."
                 },
                 "title": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "Garry Potter"
                 },
                 "updated_at": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "2021-01-01 00:00:00"
                 },
                 "uuid": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440000"
                 }
             }
         },
@@ -747,37 +804,52 @@ const docTemplate = `{
                     "type": "array",
                     "items": {
                         "type": "string"
-                    }
+                    },
+                    "example": [
+                        "Tim Robbins",
+                        "Morgan Freeman"
+                    ]
                 },
                 "created_at": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "2021-01-01 00:00:00"
                 },
                 "creator": {
                     "$ref": "#/definitions/endpoints.ItemCreator"
                 },
                 "director": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "Frank Darabont"
                 },
                 "genres": {
                     "type": "array",
                     "items": {
                         "type": "string"
-                    }
+                    },
+                    "example": [
+                        "drama",
+                        "crime"
+                    ]
                 },
                 "release_date": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "1994-09-23"
                 },
                 "synopsis": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "This is a synopsis."
                 },
                 "title": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "The Shawshank Redemption"
                 },
                 "updated_at": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "2021-01-01 00:00:00"
                 },
                 "uuid": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440000"
                 }
             }
         },
@@ -806,10 +878,12 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "auth_token": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1dWlkIj"
                 },
                 "expired_at": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "2023-11-09T15:21:15.973955426Z"
                 }
             }
         },
@@ -835,7 +909,17 @@ const docTemplate = `{
             }
         },
         "endpoints.RegisterResponse": {
-            "type": "object"
+            "type": "object",
+            "properties": {
+                "username": {
+                    "type": "string",
+                    "example": "test123"
+                },
+                "uuid": {
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440000"
+                }
+            }
         },
         "endpoints.UpdateFilmRequest": {
             "type": "object",
@@ -1010,7 +1094,8 @@ const docTemplate = `{
         "ApiKeyAuth": {
             "type": "apiKey",
             "name": "Authorization",
-            "in": "header"
+            "in": "header",
+            "x-bearerformat": "Bearer"
         }
     }
 }`

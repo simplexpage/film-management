@@ -1,32 +1,37 @@
-package middlewares
+package auth
 
 import (
+	"context"
 	"film-management/pkg/auth"
-	httpTransport "film-management/pkg/transport/http/response"
+	customError "film-management/pkg/errors"
+	httpResponse "film-management/pkg/transport/http/response"
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 	"net/http"
 	"strings"
 )
 
+const (
+	AuthorizationHeader string     = "Authorization"
+	AuthorizationPrefix string     = "Bearer"
+	ContextKeyUserID    ContextKey = "user_id"
+)
+
 var (
 	ErrMissingAuthToken = errors.New("missing auth token")
-	ErrInvalidAuthToken = errors.New("invalid auth token")
+	ErrInvalidAuthToken = errors.New("invalid auth token. Bearer token is expected")
 	ErrAuthTokenEmpty   = errors.New("auth token is empty")
 	ErrWrongAuthToken   = errors.New("wrong auth token")
 )
 
-const (
-	AuthorizationHeader string = "Authorization"
-	AuthorizationPrefix string = "Bearer"
-)
+type ContextKey string
 
-type AuthService interface {
+type Service interface {
 	ParseAuthToken(token string) (*auth.JwtClaims, error)
 }
 
-// AuthMiddleware is a middleware for authentication.
-func AuthMiddleware(notAuthUrls []string, authService AuthService) mux.MiddlewareFunc {
+// Middleware is a middleware for authentication.
+func Middleware(notAuthUrls []string, authService Service) mux.MiddlewareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			// Skip authentication for some urls
@@ -44,7 +49,7 @@ func AuthMiddleware(notAuthUrls []string, authService AuthService) mux.Middlewar
 
 			// Check if token is missing
 			if tokenHeader == "" {
-				httpTransport.EncodeError(r.Context(), http.StatusUnauthorized, ErrMissingAuthToken, w)
+				httpResponse.EncodeError(r.Context(), customError.AuthError{Err: ErrMissingAuthToken}, w)
 
 				return
 			}
@@ -52,14 +57,14 @@ func AuthMiddleware(notAuthUrls []string, authService AuthService) mux.Middlewar
 			// Check if token is valid
 			tokenParts := strings.Split(tokenHeader, " ")
 			if len(tokenParts) != 2 || tokenParts[0] != AuthorizationPrefix {
-				httpTransport.EncodeError(r.Context(), http.StatusUnauthorized, ErrInvalidAuthToken, w)
+				httpResponse.EncodeError(r.Context(), customError.AuthError{Err: ErrInvalidAuthToken}, w)
 
 				return
 			}
 
 			// Check if token is empty
 			if len(tokenParts[1]) == 0 {
-				httpTransport.EncodeError(r.Context(), http.StatusUnauthorized, ErrAuthTokenEmpty, w)
+				httpResponse.EncodeError(r.Context(), customError.AuthError{Err: ErrAuthTokenEmpty}, w)
 
 				return
 			}
@@ -67,16 +72,21 @@ func AuthMiddleware(notAuthUrls []string, authService AuthService) mux.Middlewar
 			// Parse token
 			token, err := authService.ParseAuthToken(tokenParts[1])
 			if err != nil {
-				httpTransport.EncodeError(r.Context(), http.StatusUnauthorized, ErrWrongAuthToken, w)
+				httpResponse.EncodeError(r.Context(), customError.AuthError{Err: ErrWrongAuthToken}, w)
 
 				return
 			}
 
 			// Add user id to context
-			ctx := auth.SetUserIDToContext(r.Context(), token.UUID)
+			ctx := setUserIDToContext(r.Context(), token.UUID)
 			r = r.WithContext(ctx)
 
 			next.ServeHTTP(w, r)
 		})
 	}
+}
+
+// setUserIDToContext is a function for setting user ID to context.
+func setUserIDToContext(ctx context.Context, userID string) context.Context {
+	return context.WithValue(ctx, ContextKeyUserID, userID)
 }

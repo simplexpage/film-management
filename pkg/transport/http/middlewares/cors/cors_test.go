@@ -1,7 +1,7 @@
-package middlewares_test
+package cors_test
 
 import (
-	"film-management/pkg/transport/http/middlewares"
+	"film-management/pkg/transport/http/middlewares/cors"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap"
 	"net/http"
@@ -38,8 +38,8 @@ func TestCORSMiddleware(t *testing.T) {
 			name:                "InvalidOrigin",
 			method:              http.MethodGet,
 			origin:              "http://invalid.com",
-			expectedStatus:      http.StatusBadRequest,
-			expectedErrorString: middlewares.ErrInvalidOriginCORS.Error(),
+			expectedStatus:      http.StatusForbidden,
+			expectedErrorString: cors.ErrInvalidOriginCORS.Error(),
 		},
 		{
 			name:           "EmptyOrigin",
@@ -55,14 +55,14 @@ func TestCORSMiddleware(t *testing.T) {
 		},
 	}
 
-	handler := middlewares.CORSMiddleware(corsAllowedOrigins, logger)(corsHandler)
+	handler := cors.Middleware(corsAllowedOrigins, logger)(corsHandler)
 
 	for _, tc := range testCases {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 			request := httptest.NewRequest(tc.method, "/", nil)
-			request.Header.Set(middlewares.HeaderOrigin, tc.origin)
+			request.Header.Set(cors.HeaderOrigin, tc.origin)
 
 			recorder := httptest.NewRecorder()
 			handler.ServeHTTP(recorder, request)

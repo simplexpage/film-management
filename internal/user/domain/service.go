@@ -3,7 +3,8 @@ package domain
 import (
 	"context"
 	"film-management/internal/user/domain/models"
-	"film-management/pkg/validation"
+	customError "film-management/pkg/errors"
+	"github.com/pkg/errors"
 	"time"
 )
 
@@ -30,13 +31,8 @@ func NewService(userRepository UserRepository, authService AuthService, password
 // Register is a method to register new user.
 func (s service) Register(ctx context.Context, model *models.User) error {
 	// Check if a user with the same username already exists in db
-	if err := s.userRepository.UserExistsWithUsername(ctx, model.Username); err != nil {
-		switch err {
-		case ErrUserExistsWithUsername:
-			return validation.CustomError{Field: "username", Err: ErrUserExistsWithUsername}
-		default:
-			return err
-		}
+	if err := s.checkDuplicateUser(ctx, model.Username); err != nil {
+		return err
 	}
 
 	// Generated hashed password
@@ -44,11 +40,30 @@ func (s service) Register(ctx context.Context, model *models.User) error {
 	if errPassword != nil {
 		return ErrGeneratePasswordHash
 	}
+
 	// Set hashed password
 	model.Password = hashPassword
 
 	// Create user in db
-	return s.userRepository.CreateUser(ctx, model)
+	if err := s.userRepository.CreateUser(ctx, model); err != nil {
+		return ErrUserCreate
+	}
+
+	return nil
+}
+
+// checkDuplicateUser Check if a user with the same username already exists in db.
+func (s service) checkDuplicateUser(ctx context.Context, username string) error {
+	if err := s.userRepository.UserExistsWithUsername(ctx, username); err != nil {
+		switch {
+		case errors.Is(err, ErrUserExistsWithUsername):
+			return customError.ValidationError{Field: "username", Err: ErrUserExistsWithUsername}
+		default:
+			return ErrUserCheckExistence
+		}
+	}
+
+	return nil
 }
 
 // Login is a method to login user.
@@ -56,17 +71,22 @@ func (s service) Login(ctx context.Context, username string, password string) (s
 	// Find user by username in db
 	user, err := s.userRepository.FindOneUserByUsername(ctx, username)
 	if err != nil {
-		return "", time.Time{}, validation.CustomError{Field: "password", Err: ErrIncorrectLoginOrPassword}
+		switch {
+		case errors.Is(err, ErrUserNotFound):
+			return "", time.Time{}, customError.ValidationError{Field: "username", Err: ErrIncorrectLoginOrPassword}
+		default:
+			return "", time.Time{}, ErrUserFindByUsername
+		}
 	}
 
 	// Compare password hash
-	if ok := s.passwordService.ComparePasswordHash(password, user.Password); !ok {
-		return "", time.Time{}, validation.CustomError{Field: "password", Err: ErrIncorrectLoginOrPassword}
+	if err := s.passwordService.ComparePasswordHash(password, user.Password); err != nil {
+		return "", time.Time{}, customError.ValidationError{Field: "username", Err: ErrIncorrectLoginOrPassword}
 	}
 
 	// Generate auth token
 	if authToken, expirationTime, errAuthToken := s.authService.GenerateAuthToken(user.UUID.String()); errAuthToken != nil {
-		return "", time.Time{}, errAuthToken
+		return "", time.Time{}, ErrGenerateAuthToken
 	} else {
 		return authToken, expirationTime, nil
 	}

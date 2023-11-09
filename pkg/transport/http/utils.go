@@ -17,6 +17,7 @@ func GetValueFromPath(r *http.Request, key string) (string, error) {
 	return value, nil
 }
 
+// GetIntParamFromHTTPRequest Get int value from path.
 func GetIntParamFromHTTPRequest(paramName string, r *http.Request, target *int) error {
 	if paramValue := r.URL.Query().Get(paramName); paramValue != "" {
 		var err error

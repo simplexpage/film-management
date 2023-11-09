@@ -2,7 +2,7 @@ package sort
 
 import (
 	"errors"
-	"film-management/pkg/validation"
+	customError "film-management/pkg/errors"
 	"fmt"
 	"strings"
 )
@@ -33,17 +33,17 @@ func newOptions(sortField string, availableSortFields []string) (*Opts, error) {
 	splits := strings.Split(sortField, ".")
 
 	if len(splits) != 2 {
-		return nil, validation.CustomError{Field: "sort", Err: ErrMalformedSortQueryParameter}
+		return nil, customError.ValidationError{Field: "sort", Err: ErrMalformedSortQueryParameter}
 	}
 
 	field, order := splits[0], splits[1]
 
 	if order != OrderDESC && order != OrderASC {
-		return nil, validation.CustomError{Field: "sort", Err: ErrMalformedOrderDirection}
+		return nil, customError.ValidationError{Field: "sort", Err: ErrMalformedOrderDirection}
 	}
 
 	if !stringInSlice(availableSortFields, field) {
-		return nil, validation.CustomError{Field: "sort", Err: ErrUnknownField}
+		return nil, customError.ValidationError{Field: "sort", Err: ErrUnknownField}
 	}
 
 	return &Opts{

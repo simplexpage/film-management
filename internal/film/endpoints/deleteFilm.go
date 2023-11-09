@@ -3,6 +3,7 @@ package endpoints
 import (
 	"context"
 	"film-management/internal/film/domain"
+	"film-management/pkg/errors"
 	"film-management/pkg/validation"
 	"github.com/go-kit/kit/endpoint"
 	"github.com/google/uuid"
@@ -12,7 +13,7 @@ func MakeDeleteFilmEndpoint(s domain.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
 		reqForm, ok := request.(DeleteFilmRequest)
 		if !ok {
-			return DeleteFilmResponse{}, ErrInvalidRequest
+			return DeleteFilmResponse{}, errors.ErrInvalidRequest
 		}
 
 		// Validate form

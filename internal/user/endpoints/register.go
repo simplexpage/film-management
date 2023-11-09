@@ -4,6 +4,7 @@ import (
 	"context"
 	"film-management/internal/user/domain"
 	"film-management/internal/user/domain/models"
+	"film-management/pkg/errors"
 	"film-management/pkg/validation"
 	"github.com/go-kit/kit/endpoint"
 )
@@ -13,7 +14,7 @@ func MakeRegisterEndpoint(s domain.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
 		reqForm, ok := request.(RegisterRequest)
 		if !ok {
-			return RegisterResponse{}, ErrInvalidRequest
+			return RegisterResponse{}, errors.ErrInvalidRequest
 		}
 
 		// Validate form
@@ -32,7 +33,7 @@ func MakeRegisterEndpoint(s domain.Service) endpoint.Endpoint {
 			return RegisterResponse{Err: errRegister}, nil
 		}
 
-		return RegisterResponse{}, nil
+		return RegisterResponse{UUID: model.UUID.String(), Username: model.Username}, nil
 	}
 }
 
@@ -56,7 +57,9 @@ func (r *RegisterRequest) Validate() error {
 
 // RegisterResponse is a response for Register.
 type RegisterResponse struct {
-	Err error `json:"err,omitempty" swaggerignore:"true"`
+	UUID     string `json:"uuid,omitempty" example:"550e8400-e29b-41d4-a716-446655440000"`
+	Username string `json:"username,omitempty" example:"test123"`
+	Err      error  `json:"err,omitempty" swaggerignore:"true"`
 }
 
 // Failed implements response.Failed.

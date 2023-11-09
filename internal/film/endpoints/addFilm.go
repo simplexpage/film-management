@@ -4,6 +4,7 @@ import (
 	"context"
 	"film-management/internal/film/domain"
 	"film-management/internal/film/domain/models"
+	"film-management/pkg/errors"
 	"film-management/pkg/validation"
 	"github.com/go-kit/kit/endpoint"
 	"github.com/google/uuid"
@@ -16,7 +17,7 @@ func MakeAddFilmEndpoint(s domain.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
 		reqForm, ok := request.(AddFilmRequest)
 		if !ok {
-			return AddFilmResponse{}, ErrInvalidRequest
+			return AddFilmResponse{}, errors.ErrInvalidRequest
 		}
 
 		// Validate form
@@ -80,7 +81,7 @@ type AddFilmRequest struct {
 	Director    string   `json:"director" validate:"required,min=3,max=40" example:"John Doe"`
 	ReleaseDate string   `json:"releaseDate" validate:"required,customDate" example:"2021-01-01"`
 	Genres      []string `json:"genres" validate:"required,min=1,max=5,dive,min=3,max=100" example:"action,adventure,sci-fi"`
-	Casts       []string `json:"casts" validate:"required,min=1,max=10,dive,min=3,max=100" example:"John Doe, Jane Doe, Foo Bar, Baz Quux"`
+	Casts       []string `json:"casts" validate:"required,min=1,max=10,dive,min=3,max=100" example:"John Doe,Jane Doe,Foo Bar,Baz Quux"`
 	Synopsis    string   `json:"synopsis" validate:"required,min=10,max=1000" example:"This is a synopsis."`
 }
 
@@ -107,15 +108,15 @@ func (r AddFilmResponse) Failed() error { return r.Err }
 
 // ItemFilm is a response for ViewFilm.
 type ItemFilm struct {
-	UUID        uuid.UUID `json:"uuid"`
-	Title       string    `json:"title"`
-	Director    string    `json:"director"`
-	Genres      []string  `json:"genres"`
-	ReleaseDate string    `json:"release_date"`
-	Casts       []string  `json:"casts"`
-	Synopsis    string    `json:"synopsis"`
-	CreatedAt   string    `json:"created_at"`
-	UpdatedAt   string    `json:"updated_at"`
+	UUID        uuid.UUID `json:"uuid" example:"550e8400-e29b-41d4-a716-446655440000"`
+	Title       string    `json:"title" example:"Garry Potter"`
+	Director    string    `json:"director" example:"John Doe"`
+	Genres      []string  `json:"genres" example:"action,adventure,sci-fi"`
+	ReleaseDate string    `json:"release_date" example:"2021-01-01"`
+	Casts       []string  `json:"casts" example:"John Doe,Jane Doe,Foo Bar,Baz Quux"`
+	Synopsis    string    `json:"synopsis" example:"This is a synopsis."`
+	CreatedAt   string    `json:"created_at" example:"2021-01-01 00:00:00"`
+	UpdatedAt   string    `json:"updated_at" example:"2021-01-01 00:00:00"`
 }
 
 // domainFilmToItemFilm is a method to convert domain Film to Item Film.

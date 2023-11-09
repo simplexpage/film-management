@@ -1,7 +1,7 @@
-package middlewares_test
+package recovery_test
 
 import (
-	"film-management/pkg/transport/http/middlewares"
+	"film-management/pkg/transport/http/middlewares/recovery"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap"
 	"net/http"
@@ -18,13 +18,13 @@ func TestRecoveryMiddleware(t *testing.T) {
 		panic("test panic")
 	})
 
-	handler := middlewares.RecoveryMiddleware(logger)(panicHandler)
+	handler := recovery.Middleware(logger)(panicHandler)
 
 	request := httptest.NewRequest(http.MethodGet, "/", nil)
 	recorder := httptest.NewRecorder()
 
 	handler.ServeHTTP(recorder, request)
 
-	assert.Equal(t, http.StatusBadRequest, recorder.Code)
-	assert.Contains(t, recorder.Body.String(), middlewares.ErrInvalidServer.Error())
+	assert.Equal(t, http.StatusInternalServerError, recorder.Code)
+	assert.Contains(t, recorder.Body.String(), recovery.ErrInvalidServer.Error())
 }

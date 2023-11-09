@@ -1,6 +1,13 @@
-name: "film-management"
+name: "film_management"
 http:
   port: 8080
+  corsAllowedOrigins: ["http://localhost:8088"]
+  notAuthUrls: [
+    "/api/v1/health",
+    "/api/v1/swagger",
+    "/api/v1/user/register",
+    "/api/v1/user/login",
+  ]
 debugHttp:
   port: 8081
 storage:
@@ -15,3 +22,6 @@ log:
   level: "Debug"
   colored: true
   development: true
+services:
+  auth:
+    authDurationMin: 60

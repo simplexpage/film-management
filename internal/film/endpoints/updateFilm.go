@@ -4,6 +4,7 @@ import (
 	"context"
 	"film-management/internal/film/domain"
 	"film-management/internal/film/domain/models"
+	"film-management/pkg/errors"
 	"film-management/pkg/validation"
 	"github.com/go-kit/kit/endpoint"
 	"github.com/google/uuid"
@@ -16,7 +17,7 @@ func MakeUpdateFilmEndpoint(s domain.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
 		reqForm, ok := request.(UpdateFilmRequest)
 		if !ok {
-			return UpdateFilmResponse{}, ErrInvalidRequest
+			return UpdateFilmResponse{}, errors.ErrInvalidRequest
 		}
 
 		// Validate form

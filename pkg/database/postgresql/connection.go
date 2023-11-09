@@ -2,6 +2,7 @@ package postgresql
 
 import (
 	"fmt"
+	"github.com/pkg/errors"
 	"go.uber.org/zap"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -14,6 +15,7 @@ import (
 func Connect(config *Config, logger *zap.Logger) (*gorm.DB, error) {
 	dbURL := fmt.Sprintf("postgresql://%s:%s@%s:%s/%s",
 		config.Username, config.Password, config.Host, config.Port, config.Database)
+	logger.Debug("postgres db url", zap.String("url", dbURL))
 
 	gormLogger := NewGormLogger(logger)
 
@@ -22,13 +24,12 @@ func Connect(config *Config, logger *zap.Logger) (*gorm.DB, error) {
 	})
 
 	if err != nil {
-		logger.Debug("Failed to connect to database", zap.String("url", dbURL))
+		logger.Error("failed to connect to database", zap.Error(err))
 
-		return nil, fmt.Errorf("failed to connect to database: %w", err)
+		return nil, errors.Wrap(err, "failed to connect to database")
 	}
 
 	logger.Info("Connected to postgres database")
-	logger.Debug("PostgresUrl", zap.String("url", dbURL))
 
 	return db, nil
 }

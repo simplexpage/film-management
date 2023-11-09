@@ -2,7 +2,7 @@ package instrumenting
 
 import (
 	"errors"
-	"film-management/pkg/validation"
+	customError "film-management/pkg/errors"
 	"fmt"
 	"github.com/go-playground/validator/v10"
 )
@@ -14,10 +14,10 @@ func PrintErr(err error) string {
 	if err != nil {
 		var (
 			validationErrors validator.ValidationErrors
-			customError      validation.CustomError
+			validationError  customError.ValidationError
 		)
 
-		if errors.As(err, &validationErrors) || errors.As(err, &customError) {
+		if errors.As(err, &validationErrors) || errors.As(err, &validationError) {
 			isError = false
 		} else {
 			isError = true

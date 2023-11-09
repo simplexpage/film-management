@@ -172,10 +172,10 @@ func (m *MockPasswordService) EXPECT() *MockPasswordServiceMockRecorder {
 }
 
 // ComparePasswordHash mocks base method.
-func (m *MockPasswordService) ComparePasswordHash(password, hash string) bool {
+func (m *MockPasswordService) ComparePasswordHash(password, hash string) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ComparePasswordHash", password, hash)
-	ret0, _ := ret[0].(bool)
+	ret0, _ := ret[0].(error)
 	return ret0
 }
 

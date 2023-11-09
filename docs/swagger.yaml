@@ -5,9 +5,9 @@ definitions:
       casts:
         example:
         - John Doe
-        - ' Jane Doe'
-        - ' Foo Bar'
-        - ' Baz Quux'
+        - Jane Doe
+        - Foo Bar
+        - Baz Quux
         items:
           type: string
         maxItems: 10
@@ -59,85 +59,131 @@ definitions:
   endpoints.ItemAllFilms:
     properties:
       casts:
+        example:
+        - John Doe
+        - Jane Doe
+        - Foo Bar
         items:
           type: string
         type: array
       created_at:
+        example: "2021-01-01 00:00:00"
         type: string
       director:
+        example: John Doe
         type: string
       genres:
+        example:
+        - action
+        - adventure
+        - sci-fi
         items:
           type: string
         type: array
       release_date:
+        example: "2021-01-01"
         type: string
       synopsis:
+        example: This is a synopsis.
         type: string
       title:
+        example: Garry Potter
         type: string
       updated_at:
+        example: "2021-01-01 00:00:00"
         type: string
       uuid:
+        example: 550e8400-e29b-41d4-a716-446655440000
         type: string
     type: object
   endpoints.ItemCreator:
     properties:
       username:
+        example: test
         type: string
       uuid:
+        example: 550e8400-e29b-41d4-a716-446655440000
         type: string
     type: object
   endpoints.ItemFilm:
     properties:
       casts:
+        example:
+        - John Doe
+        - Jane Doe
+        - Foo Bar
+        - Baz Quux
         items:
           type: string
         type: array
       created_at:
+        example: "2021-01-01 00:00:00"
         type: string
       director:
+        example: John Doe
         type: string
       genres:
+        example:
+        - action
+        - adventure
+        - sci-fi
         items:
           type: string
         type: array
       release_date:
+        example: "2021-01-01"
         type: string
       synopsis:
+        example: This is a synopsis.
         type: string
       title:
+        example: Garry Potter
         type: string
       updated_at:
+        example: "2021-01-01 00:00:00"
         type: string
       uuid:
+        example: 550e8400-e29b-41d4-a716-446655440000
         type: string
     type: object
   endpoints.ItemViewFilm:
     properties:
       casts:
+        example:
+        - Tim Robbins
+        - Morgan Freeman
         items:
           type: string
         type: array
       created_at:
+        example: "2021-01-01 00:00:00"
         type: string
       creator:
         $ref: '#/definitions/endpoints.ItemCreator'
       director:
+        example: Frank Darabont
         type: string
       genres:
+        example:
+        - drama
+        - crime
         items:
           type: string
         type: array
       release_date:
+        example: "1994-09-23"
         type: string
       synopsis:
+        example: This is a synopsis.
         type: string
       title:
+        example: The Shawshank Redemption
         type: string
       updated_at:
+        example: "2021-01-01 00:00:00"
         type: string
       uuid:
+        example: 550e8400-e29b-41d4-a716-446655440000
         type: string
     type: object
   endpoints.LoginRequest:
@@ -159,8 +205,10 @@ definitions:
   endpoints.LoginResponse:
     properties:
       auth_token:
+        example: eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1dWlkIj
         type: string
       expired_at:
+        example: "2023-11-09T15:21:15.973955426Z"
         type: string
     type: object
   endpoints.RegisterRequest:
@@ -180,6 +228,13 @@ definitions:
     - username
     type: object
   endpoints.RegisterResponse:
+    properties:
+      username:
+        example: test123
+        type: string
+      uuid:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
     type: object
   endpoints.UpdateFilmRequest:
     properties:
@@ -308,7 +363,7 @@ info:
   title: Film management service API
   version: "1.0"
 paths:
-  /api/v1/films/:
+  /films:
     get:
       consumes:
       - application/json
@@ -377,6 +432,7 @@ paths:
       summary: View all films
       tags:
       - Film
+  /films/:
     post:
       consumes:
       - application/json
@@ -421,7 +477,7 @@ paths:
       summary: Add a film
       tags:
       - Film
-  /api/v1/films/{id}:
+  /films/{id}:
     delete:
       consumes:
       - application/json
@@ -429,7 +485,7 @@ paths:
       parameters:
       - description: Film UUID
         in: path
-        name: uuid
+        name: id
         required: true
         type: string
       produces:
@@ -450,6 +506,10 @@ paths:
             $ref: '#/definitions/response.ErrorResponse'
         "401":
           description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: Forbidden
           schema:
             $ref: '#/definitions/response.ErrorResponse'
         "404":
@@ -476,7 +536,7 @@ paths:
       parameters:
       - description: Film UUID
         in: path
-        name: uuid
+        name: id
         required: true
         type: string
       produces:
@@ -519,7 +579,7 @@ paths:
       parameters:
       - description: Film UUID
         in: path
-        name: uuid
+        name: id
         required: true
         type: string
       - description: Update film form
@@ -546,6 +606,14 @@ paths:
             $ref: '#/definitions/response.ErrorResponse'
         "401":
           description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Not Found
           schema:
             $ref: '#/definitions/response.ErrorResponse'
         "422":
@@ -661,4 +729,5 @@ securityDefinitions:
     in: header
     name: Authorization
     type: apiKey
+    x-bearerformat: Bearer
 swagger: "2.0"
