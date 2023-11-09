@@ -65,10 +65,46 @@ func TestService_Register(t *testing.T) {
 				},
 			},
 			mockUserRepositoryBehavior: func(r *mocks.MockUserRepository) {
+				r.EXPECT().UserExistsWithUsername(gomock.Any(), gomock.Any()).Return(domain.ErrUserCheckExistence).AnyTimes()
+			},
+			mockAuthServiceBehavior:     func(r *mocks.MockAuthService) {},
+			mockPasswordServiceBehavior: func(r *mocks.MockPasswordService) {},
+			assert: func(in *in, out *out) {
+				requireAssert.Error(out.err)
+			},
+		},
+		{
+			name: "validation if user exists with the same username",
+			in: in{
+				user: &models.User{
+					Username: "test",
+					Password: "12345678",
+				},
+			},
+			mockUserRepositoryBehavior: func(r *mocks.MockUserRepository) {
 				r.EXPECT().UserExistsWithUsername(gomock.Any(), gomock.Any()).Return(domain.ErrUserExistsWithUsername).AnyTimes()
 			},
 			mockAuthServiceBehavior:     func(r *mocks.MockAuthService) {},
 			mockPasswordServiceBehavior: func(r *mocks.MockPasswordService) {},
+			assert: func(in *in, out *out) {
+				requireAssert.Error(out.err)
+			},
+		},
+		{
+			name: "failed to generate password hash",
+			in: in{
+				user: &models.User{
+					Username: "test",
+					Password: "12345678",
+				},
+			},
+			mockUserRepositoryBehavior: func(r *mocks.MockUserRepository) {
+				r.EXPECT().UserExistsWithUsername(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
+			},
+			mockPasswordServiceBehavior: func(r *mocks.MockPasswordService) {
+				r.EXPECT().GeneratePasswordHash(gomock.Any()).Return("", domain.ErrGeneratePasswordHash).AnyTimes()
+			},
+			mockAuthServiceBehavior: func(r *mocks.MockAuthService) {},
 			assert: func(in *in, out *out) {
 				requireAssert.Error(out.err)
 			},
