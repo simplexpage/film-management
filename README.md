@@ -104,3 +104,11 @@ This command starts a Docker container and forwards ports 8080 and 8081, allowin
 Note: This example uses ports 8088 and 8078 for forwarding, but you can use other ports at your discretion.
 
 Your application will now be running inside a Docker container and accessible at http://localhost:8088 and http://localhost:8078.
+
+
+
+## Adding and Updating a Movie
+
+* **Genres**: When adding or updating a movie, if the database does not have a corresponding genre, an appropriate error will be returned.
+* **Director**: When adding or updating a movie, if the database does not have an existing director, a new director will be created.
+* **Actors**: When adding or updating a movie, if the database does not have an existing actor, a new actor will be created.
