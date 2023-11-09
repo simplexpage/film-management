@@ -27,7 +27,6 @@
 │           └── http - http transport
 ├── pkg - common packages for project
 ├── repositories - external repositories like postgreDB, redis, etc.
-│   ├── services - auth and password services and any other services
 │   └── storage - storage repositories
 ├── Dockerfile - dockerfile for local project
 ├── Dockerfile_prod - dockerfile for production project
