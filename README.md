@@ -30,6 +30,7 @@
 │   ├── services - auth and password services and any other services
 │   └── storage - storage repositories
 ├── Dockerfile - dockerfile for local project
+├── Dockerfile_prod - dockerfile for production project
 ├── Makefile - makefile for local project
 └── .env.example - example .env file
 ```
@@ -85,3 +86,21 @@ https://dbdiagram.io/d/film-management-6545f3d87d8bbd646577e9de
 ## Prometheus metrics
 
 http://localhost:8078/metrics
+
+
+## Docker for production
+
+### 1. Build docker image
+
+Run `make build_prod` to build docker image.
+This command will create a Docker image named my_app:latest based on the Dockerfile_prod.
+
+### 2. Run docker image
+
+Run `make run_prod` to run docker image.
+
+This command starts a Docker container and forwards ports 8080 and 8081, allowing you to access your application on ports 8088 and 8078 on your local machine.
+
+Note: This example uses ports 8088 and 8078 for forwarding, but you can use other ports at your discretion.
+
+Your application will now be running inside a Docker container and accessible at http://localhost:8088 and http://localhost:8078.

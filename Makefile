@@ -1,4 +1,6 @@
 # Description: Makefile for film-management
+
+# Local development
 start_local:
 	docker-compose up
 
@@ -21,6 +23,7 @@ format_local:
 init_swagger:
 	docker-compose run --rm go_film_management bash -c "swag init -g internal/common/transport/http/http.go"
 
+# Run test
 .PHONY: cover
 cover:
 	go test ./... -short -count=1 -race -coverprofile=coverage.out .. && go tool cover -html coverage.out && rm coverage.out
@@ -30,3 +33,21 @@ race:
 
 test:
 	go test -v -count=1 ./...
+
+
+# Production
+
+# Defining Variables
+IMAGE_NAME = my_app
+TAG = latest
+
+# Path to Dockerfile for production
+DOCKERFILE = Dockerfile_prod
+
+# Target for building Docker image
+build_prod:
+	docker build -f $(DOCKERFILE) -t $(IMAGE_NAME):$(TAG) .
+
+# Target for running a Docker container
+run_prod:
+	docker run -d -p 8088:8080 -p 8078:8081 $(IMAGE_NAME):$(TAG)
