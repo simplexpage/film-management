@@ -5,9 +5,8 @@ import (
 	"film-management/pkg/auth"
 	customError "film-management/pkg/errors"
 	httpResponse "film-management/pkg/transport/http/response"
-	"github.com/gorilla/mux"
+	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
-	"net/http"
 	"strings"
 )
 
@@ -31,58 +30,60 @@ type Service interface {
 }
 
 // Middleware is a middleware for authentication.
-func Middleware(notAuthUrls []string, authService Service) mux.MiddlewareFunc {
-	return func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			// Skip authentication for some urls
-			requestPath := r.URL.Path
-			for _, value := range notAuthUrls {
-				if strings.Contains(requestPath, value) {
-					next.ServeHTTP(w, r)
-
-					return
-				}
-			}
-
-			// Get authorization header
-			tokenHeader := r.Header.Get(AuthorizationHeader)
-
-			// Check if token is missing
-			if tokenHeader == "" {
-				httpResponse.EncodeError(r.Context(), customError.AuthError{Err: ErrMissingAuthToken}, w)
+func Middleware(notAuthUrls []string, authService Service) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		// Skip authentication for some urls
+		requestPath := c.Request.URL.Path
+		for _, value := range notAuthUrls {
+			if strings.Contains(requestPath, value) {
+				c.Next()
 
 				return
 			}
+		}
 
-			// Check if token is valid
-			tokenParts := strings.Split(tokenHeader, " ")
-			if len(tokenParts) != 2 || tokenParts[0] != AuthorizationPrefix {
-				httpResponse.EncodeError(r.Context(), customError.AuthError{Err: ErrInvalidAuthToken}, w)
+		// Get authorization header
+		tokenHeader := c.Request.Header.Get(AuthorizationHeader)
 
-				return
-			}
+		// Check if token is missing
+		if tokenHeader == "" {
+			httpResponse.EncodeError(c.Request.Context(), customError.AuthError{Err: ErrMissingAuthToken}, c.Writer)
+			c.Abort()
 
-			// Check if token is empty
-			if len(tokenParts[1]) == 0 {
-				httpResponse.EncodeError(r.Context(), customError.AuthError{Err: ErrAuthTokenEmpty}, w)
+			return
+		}
 
-				return
-			}
+		// Check if token is valid
+		tokenParts := strings.Split(tokenHeader, " ")
+		if len(tokenParts) != 2 || tokenParts[0] != AuthorizationPrefix {
+			httpResponse.EncodeError(c.Request.Context(), customError.AuthError{Err: ErrInvalidAuthToken}, c.Writer)
+			c.Abort()
 
-			// Parse token
-			token, err := authService.ParseAuthToken(tokenParts[1])
-			if err != nil {
-				httpResponse.EncodeError(r.Context(), customError.AuthError{Err: ErrWrongAuthToken}, w)
+			return
+		}
 
-				return
-			}
+		// Check if token is empty
+		if len(tokenParts[1]) == 0 {
+			httpResponse.EncodeError(c.Request.Context(), customError.AuthError{Err: ErrAuthTokenEmpty}, c.Writer)
+			c.Abort()
 
-			// Add user id to context
-			ctx := setUserIDToContext(r.Context(), token.UUID)
-			r = r.WithContext(ctx)
+			return
+		}
 
-			next.ServeHTTP(w, r)
-		})
+		// Parse token
+		token, err := authService.ParseAuthToken(tokenParts[1])
+		if err != nil {
+			httpResponse.EncodeError(c.Request.Context(), customError.AuthError{Err: ErrWrongAuthToken}, c.Writer)
+			c.Abort()
+
+			return
+		}
+
+		// Add user id to context
+		ctx := setUserIDToContext(c.Request.Context(), token.UUID)
+		c.Request = c.Request.WithContext(ctx)
+
+		c.Next()
 	}
 }
 

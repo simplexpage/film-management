@@ -2,29 +2,18 @@ package http
 
 import (
 	"context"
-	"film-management/config"
-	httpCommon "film-management/internal/common/transport/http"
 	"film-management/internal/user/endpoints"
 	httpTransport "film-management/pkg/transport/http"
-	"film-management/pkg/transport/http/middlewares/cors"
-	"film-management/pkg/transport/http/middlewares/recovery"
 	"film-management/pkg/transport/http/response"
+	"github.com/gin-gonic/gin"
 	httpKitTransport "github.com/go-kit/kit/transport/http"
-	"github.com/gorilla/mux"
 	jsoniter "github.com/json-iterator/go"
 	"go.uber.org/zap"
 	"net/http"
 )
 
-const (
-	APIPath = httpCommon.APIPath + "user/"
-
-	RegisterPath = APIPath + "register"
-	LoginPath    = APIPath + "login"
-)
-
-// NewHTTPHandlers is a function that returns a http.Handler that makes a set of endpoints available on predefined paths.
-func NewHTTPHandlers(endpoints endpoints.SetEndpoints, cfg *config.Config, logger *zap.Logger) http.Handler {
+// SetHTTPRoutes is a function that makes a set of endpoints available on predefined paths.
+func SetHTTPRoutes(router *gin.Engine, endpoints endpoints.SetEndpoints, logger *zap.Logger) {
 	options := []httpKitTransport.ServerOption{
 		httpKitTransport.ServerErrorHandler(httpTransport.NewLogErrorHandler(logger)),
 		httpKitTransport.ServerErrorEncoder(response.EncodeError),
@@ -48,27 +37,16 @@ func NewHTTPHandlers(endpoints endpoints.SetEndpoints, cfg *config.Config, logge
 		options...,
 	)
 
-	r := mux.NewRouter()
-
-	// CORS
-	r.Use(mux.CORSMethodMiddleware(r))
-	r.Use(cors.Middleware(cfg.HTTP.CorsAllowedOrigins, logger))
-
-	// Recovery
-	r.Use(recovery.Middleware(logger))
-
 	// Routes
-
-	// User
 	//
-	// Register
-	r.Handle(RegisterPath, registerHandler).Methods(http.MethodPost, http.MethodOptions)
-	// Login
-	r.Handle(LoginPath, loginHandler).Methods(http.MethodPost, http.MethodOptions)
-	// Set custom error handlers
-	response.SetErrorHandlers(r)
-
-	return r
+	// User
+	v1 := router.Group("/api/v1/user")
+	{
+		// Register
+		v1.POST("/register", gin.WrapH(registerHandler))
+		// Login
+		v1.POST("/login", gin.WrapH(loginHandler))
+	}
 }
 
 // Registration godoc

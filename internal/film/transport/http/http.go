@@ -2,102 +2,69 @@ package http
 
 import (
 	"context"
-	"film-management/config"
-	httpCommon "film-management/internal/common/transport/http"
 	"film-management/internal/film/endpoints"
 	httpTransport "film-management/pkg/transport/http"
 	"film-management/pkg/transport/http/middlewares/auth"
-	"film-management/pkg/transport/http/middlewares/cors"
-	"film-management/pkg/transport/http/middlewares/recovery"
 	"film-management/pkg/transport/http/response"
 	"film-management/pkg/utils"
+	"github.com/gin-gonic/gin"
 	httpKitTransport "github.com/go-kit/kit/transport/http"
-	"github.com/gorilla/mux"
 	jsoniter "github.com/json-iterator/go"
-	"go.uber.org/zap"
 	"net/http"
 	"strings"
 )
 
-const (
-	APIPath = httpCommon.APIPath + "films/"
-)
-
-// NewHTTPHandlers is a function that returns a http.Handler that makes a set of endpoints available on predefined paths.
-func NewHTTPHandlers(endpoints endpoints.SetEndpoints, authService auth.Service, cfg *config.Config, logger *zap.Logger) http.Handler {
-	options := []httpKitTransport.ServerOption{
-		httpKitTransport.ServerErrorHandler(httpTransport.NewLogErrorHandler(logger)),
-		httpKitTransport.ServerErrorEncoder(response.EncodeError),
-	}
-
+// SetHTTPRoutes is a function that makes a set of endpoints available on predefined paths.
+func SetHTTPRoutes(router *gin.Engine, endpoints endpoints.SetEndpoints) {
 	// Handlers
+	//
 	// Add a film
 	addAdHandler := httpKitTransport.NewServer(
 		endpoints.AddFilmEndpoint,
 		decodeHTTPAddFilmRequest,
 		response.EncodeHTTPResponse,
-		options...,
 	)
 	// Update the film
 	updateAdHandler := httpKitTransport.NewServer(
 		endpoints.UpdateFilmEndpoint,
 		decodeHTTPUpdateFilmRequest,
 		response.EncodeHTTPResponse,
-		options...,
 	)
 	// View the film
 	viewAdHandler := httpKitTransport.NewServer(
 		endpoints.ViewFilmEndpoint,
 		decodeHTTPViewFilmRequest,
 		response.EncodeHTTPResponse,
-		options...,
 	)
 	// View all films
 	viewAllFilmsHandler := httpKitTransport.NewServer(
 		endpoints.ViewAllFilmsEndpoint,
 		decodeHTTPViewAllFilmsRequest,
 		response.EncodeHTTPResponse,
-		options...,
 	)
 	// Delete the film
 	deleteAdHandler := httpKitTransport.NewServer(
 		endpoints.DeleteFilmEndpoint,
 		decodeHTTPDeleteFilmRequest,
 		response.EncodeHTTPResponse,
-		options...,
 	)
 
-	r := mux.NewRouter()
-
-	// CORS
-	r.Use(mux.CORSMethodMiddleware(r))
-	r.Use(cors.Middleware(cfg.HTTP.CorsAllowedOrigins, logger))
-
-	// Recovery
-	r.Use(recovery.Middleware(logger))
-
-	// AUTH
-	r.Use(auth.Middleware(cfg.HTTP.NotAuthUrls, authService))
-
 	// Routes
-
-	// Film
 	//
-	// Add a film
-	r.Handle(APIPath, addAdHandler).Methods(http.MethodPost)
-	// Update a film
-	r.Handle(APIPath+"{id}", updateAdHandler).Methods(http.MethodPut)
-	// View a film
-	r.Handle(APIPath+"{id}", viewAdHandler).Methods(http.MethodGet)
-	// View all films
-	r.Handle(APIPath, viewAllFilmsHandler).Methods(http.MethodGet)
-	// Delete a film
-	r.Handle(APIPath+"{id}", deleteAdHandler).Methods(http.MethodDelete)
-
-	// Set custom error handlers
-	response.SetErrorHandlers(r)
-
-	return r
+	// Film
+	v1 := router.Group("/api/v1/films")
+	{
+		// Add a film
+		v1.POST("/", gin.WrapH(addAdHandler))
+		// Update a film
+		v1.PUT("/{id}", gin.WrapH(updateAdHandler))
+		// View a film
+		v1.GET("/{id}", gin.WrapH(viewAdHandler))
+		// View all films
+		v1.GET("/", gin.WrapH(viewAllFilmsHandler))
+		// Delete a film
+		v1.DELETE("/{id}", gin.WrapH(deleteAdHandler))
+	}
 }
 
 // AddFilm godoc

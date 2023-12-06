@@ -15,11 +15,14 @@ import (
 	"film-management/pkg/database/postgresql"
 	"film-management/pkg/logger"
 	"film-management/pkg/password"
+	authMiddleware "film-management/pkg/transport/http/middlewares/auth"
 	"film-management/pkg/transport/http/response"
 	filmRepo "film-management/repositories/storage/postgres/film"
 	userRepo "film-management/repositories/storage/postgres/user"
 	"flag"
 	"fmt"
+	"github.com/gin-contrib/cors"
+	"github.com/gin-gonic/gin"
 	kitprometheus "github.com/go-kit/kit/metrics/prometheus"
 	"github.com/oklog/oklog/pkg/group"
 	stdprometheus "github.com/prometheus/client_golang/prometheus"
@@ -166,18 +169,31 @@ func main() {
 		filmEndpoints = filmEndpoint.NewEndpoints(filmService, log)
 	)
 
-	// Init http handlers
-	var httpHandlers *http.ServeMux
+	// Init HTTP routers
+	var router *gin.Engine
 	{
-		httpHandlers = http.NewServeMux()
-		// Common handlers
-		httpHandlers.Handle(httpCommonHandler.APIPath, httpCommonHandler.NewHTTPHandlers(cfg, log))
-		// User handlers
-		httpHandlers.Handle(httpUserHandler.APIPath, httpUserHandler.NewHTTPHandlers(userEndpoints, cfg, log))
-		// Film handlers
-		httpHandlers.Handle(httpFilmHandler.APIPath, httpFilmHandler.NewHTTPHandlers(filmEndpoints, authService, cfg, log))
-		// Base 404 handler
-		httpHandlers.HandleFunc("/", response.NotFoundFunc)
+		// Instantiating router
+		router = gin.Default()
+
+		// Set error handlers
+		response.SetDefaultErrorHandlers(router)
+
+		// Init CORS middleware
+		configCORS := cors.DefaultConfig()
+		configCORS.AllowOrigins = cfg.HTTP.CorsAllowedOrigins
+		router.Use(cors.New(configCORS))
+
+		// Init Auth middleware
+		router.Use(authMiddleware.Middleware(cfg.HTTP.NotAuthUrls, authService))
+
+		// Init HTTP routes
+		//
+		// Common routes
+		httpCommonHandler.SetHTTPRoutes(router)
+		// User routes
+		httpUserHandler.SetHTTPRoutes(router, userEndpoints, log)
+		// Film routes
+		httpFilmHandler.SetHTTPRoutes(router, filmEndpoints)
 	}
 
 	// Init metrics handler
@@ -219,7 +235,7 @@ func main() {
 			ReadTimeout:       cfg.HTTP.ReadTimeout * time.Second,
 			ReadHeaderTimeout: cfg.HTTP.ReadHeaderTimeout * time.Second,
 			WriteTimeout:      cfg.HTTP.WriteTimeout * time.Second,
-			Handler:           httpHandlers,
+			Handler:           router,
 		}
 
 		g.Add(func() error {
@@ -249,4 +265,10 @@ func main() {
 	}
 
 	log.Error("exit", zap.Error(g.Run()))
+}
+
+func httpHandlerForRegister() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{"message": "Register successful"})
+	}
 }

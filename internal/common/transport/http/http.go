@@ -1,25 +1,12 @@
 package http
 
 import (
-	"film-management/config"
-	"film-management/pkg/transport/http/middlewares/cors"
-	"film-management/pkg/transport/http/middlewares/recovery"
-	"film-management/pkg/transport/http/response"
-	"github.com/gorilla/mux"
-	httpSwagger "github.com/swaggo/http-swagger"
-	"go.uber.org/zap"
-	"io"
+	"github.com/gin-gonic/gin"
+	ginSwagger "github.com/swaggo/gin-swagger"
 	"net/http"
-
 	// Import for generating documentation.
 	_ "film-management/docs"
-)
-
-const (
-	APIPath = "/api/v1/"
-
-	HealthCheckPath = APIPath + "health"
-	SwaggerPath     = APIPath + "swagger"
+	swaggerfiles "github.com/swaggo/files"
 )
 
 // @title Film management service API
@@ -31,27 +18,15 @@ const (
 // @in header
 // @name Authorization
 
-// NewHTTPHandlers is a function that returns a http.Handler that makes a set of endpoints available on predefined paths.
-func NewHTTPHandlers(cfg *config.Config, logger *zap.Logger) http.Handler {
-	r := mux.NewRouter()
-
-	// CORS
-	r.Use(mux.CORSMethodMiddleware(r))
-	r.Use(cors.Middleware(cfg.HTTP.CorsAllowedOrigins, logger))
-
-	// Recovery
-	r.Use(recovery.Middleware(logger))
-
+// SetHTTPRoutes is a function that makes a set of endpoints available on predefined paths.
+func SetHTTPRoutes(router *gin.Engine) {
 	// Routes
 	//
+	v1 := router.Group("/api/v1")
 	// Health Check
-	r.HandleFunc(HealthCheckPath, HealthCheckHandler)
+	v1.GET("/health", HealthCheckHandler)
 	// Swagger
-	r.PathPrefix(SwaggerPath).Handler(httpSwagger.WrapHandler)
-	// Not found handler
-	r.NotFoundHandler = http.HandlerFunc(response.NotFoundFunc)
-
-	return r
+	v1.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
 }
 
 // HealthCheckHandler Health Check godoc
@@ -62,14 +37,9 @@ func NewHTTPHandlers(cfg *config.Config, logger *zap.Logger) http.Handler {
 // @Produce  json
 // @Success 200 {object} HealthCheckResponse "OK"
 // @Router /health [get] .
-func HealthCheckHandler(w http.ResponseWriter, _ *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	_, err := io.WriteString(w, `{"alive": true}`)
-
-	if err != nil {
-		return
-	}
+// HealthCheckHandler Health Check
+func HealthCheckHandler(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{"alive": true})
 }
 
 // HealthCheckResponse is a response struct for Health Check.
