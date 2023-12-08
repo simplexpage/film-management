@@ -30,7 +30,7 @@ type Service interface {
 }
 
 // Middleware is a middleware for authentication.
-func Middleware(notAuthUrls []string, authService Service) gin.HandlerFunc {
+func Middleware(authService Service, notAuthUrls []string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// Skip authentication for some urls
 		requestPath := c.Request.URL.Path

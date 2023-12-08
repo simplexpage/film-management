@@ -10,43 +10,54 @@ import (
 	"github.com/gin-gonic/gin"
 	httpKitTransport "github.com/go-kit/kit/transport/http"
 	jsoniter "github.com/json-iterator/go"
+	"go.uber.org/zap"
 	"net/http"
 	"strings"
 )
 
 // SetHTTPRoutes is a function that makes a set of endpoints available on predefined paths.
-func SetHTTPRoutes(router *gin.Engine, endpoints endpoints.SetEndpoints) {
+func SetHTTPRoutes(router *gin.Engine, endpoints endpoints.SetEndpoints, logger *zap.Logger) {
+	options := []httpKitTransport.ServerOption{
+		httpKitTransport.ServerErrorHandler(httpTransport.NewLogErrorHandler(logger)),
+		httpKitTransport.ServerErrorEncoder(response.EncodeError),
+	}
+
 	// Handlers
 	//
 	// Add a film
-	addAdHandler := httpKitTransport.NewServer(
+	addFilmHandler := httpKitTransport.NewServer(
 		endpoints.AddFilmEndpoint,
 		decodeHTTPAddFilmRequest,
 		response.EncodeHTTPResponse,
+		options...,
 	)
 	// Update the film
-	updateAdHandler := httpKitTransport.NewServer(
+	updateFilmHandler := httpKitTransport.NewServer(
 		endpoints.UpdateFilmEndpoint,
 		decodeHTTPUpdateFilmRequest,
 		response.EncodeHTTPResponse,
+		options...,
 	)
 	// View the film
-	viewAdHandler := httpKitTransport.NewServer(
+	viewFilmHandler := httpKitTransport.NewServer(
 		endpoints.ViewFilmEndpoint,
 		decodeHTTPViewFilmRequest,
 		response.EncodeHTTPResponse,
+		options...,
 	)
 	// View all films
 	viewAllFilmsHandler := httpKitTransport.NewServer(
 		endpoints.ViewAllFilmsEndpoint,
 		decodeHTTPViewAllFilmsRequest,
 		response.EncodeHTTPResponse,
+		options...,
 	)
 	// Delete the film
-	deleteAdHandler := httpKitTransport.NewServer(
+	deleteFilmHandler := httpKitTransport.NewServer(
 		endpoints.DeleteFilmEndpoint,
 		decodeHTTPDeleteFilmRequest,
 		response.EncodeHTTPResponse,
+		options...,
 	)
 
 	// Routes
@@ -55,15 +66,15 @@ func SetHTTPRoutes(router *gin.Engine, endpoints endpoints.SetEndpoints) {
 	v1 := router.Group("/api/v1/films")
 	{
 		// Add a film
-		v1.POST("/", gin.WrapH(addAdHandler))
+		v1.POST("/", httpTransport.WithGinContext(addFilmHandler))
 		// Update a film
-		v1.PUT("/{id}", gin.WrapH(updateAdHandler))
+		v1.PUT("/:id", httpTransport.WithGinContext(updateFilmHandler))
 		// View a film
-		v1.GET("/{id}", gin.WrapH(viewAdHandler))
+		v1.GET("/:id", httpTransport.WithGinContext(viewFilmHandler))
 		// View all films
-		v1.GET("/", gin.WrapH(viewAllFilmsHandler))
+		v1.GET("/", httpTransport.WithGinContext(viewAllFilmsHandler))
 		// Delete a film
-		v1.DELETE("/{id}", gin.WrapH(deleteAdHandler))
+		v1.DELETE("/:id", httpTransport.WithGinContext(deleteFilmHandler))
 	}
 }
 
@@ -81,11 +92,17 @@ func SetHTTPRoutes(router *gin.Engine, endpoints endpoints.SetEndpoints) {
 // @Failure 422 {object} response.ErrorResponseValidation "Data Validation Failed"
 // @Failure 500 {object} response.ErrorResponse "Internal Server Error"
 // @Router /films/ [post] .
-func decodeHTTPAddFilmRequest(_ context.Context, r *http.Request) (request interface{}, err error) {
+func decodeHTTPAddFilmRequest(ctx context.Context, r *http.Request) (request interface{}, err error) {
 	var reqForm endpoints.AddFilmRequest
 
+	// Get Gin context
+	ginCtx, errGin := httpTransport.GetGinContext(ctx)
+	if errGin != nil {
+		return nil, errGin
+	}
+
 	// Get UserID from context
-	userID, errUserID := utils.GetValueFromContext(r.Context(), auth.ContextKeyUserID)
+	userID, errUserID := utils.GetValueFromContext(ginCtx.Request.Context(), auth.ContextKeyUserID)
 	if errUserID != nil {
 		return nil, httpTransport.ErrContextUserID
 	}
@@ -118,17 +135,17 @@ func decodeHTTPAddFilmRequest(_ context.Context, r *http.Request) (request inter
 // @Failure 422 {object} response.ErrorResponseValidation "Data Validation Failed"
 // @Failure 500 {object} response.ErrorResponse "Internal Server Error"
 // @Router /films/{id} [put] .
-func decodeHTTPUpdateFilmRequest(_ context.Context, r *http.Request) (request interface{}, err error) {
+func decodeHTTPUpdateFilmRequest(ctx context.Context, r *http.Request) (request interface{}, err error) {
 	var reqForm endpoints.UpdateFilmRequest
 
-	// Get UUID from path
-	uuidFromPath, err := httpTransport.GetValueFromPath(r, "id")
-	if err != nil {
-		return nil, err
+	// Get Gin context
+	ginCtx, errGin := httpTransport.GetGinContext(ctx)
+	if errGin != nil {
+		return nil, errGin
 	}
 
 	// Get UserID from context
-	userID, errUserID := utils.GetValueFromContext(r.Context(), auth.ContextKeyUserID)
+	userID, errUserID := utils.GetValueFromContext(ginCtx.Request.Context(), auth.ContextKeyUserID)
 	if errUserID != nil {
 		return nil, httpTransport.ErrContextUserID
 	}
@@ -139,7 +156,7 @@ func decodeHTTPUpdateFilmRequest(_ context.Context, r *http.Request) (request in
 	}
 
 	// Set UUID and CreatorID
-	reqForm.UUID = uuidFromPath
+	reqForm.UUID = ginCtx.Param("id")
 	reqForm.CreatorID = userID
 
 	return reqForm, nil
@@ -159,14 +176,14 @@ func decodeHTTPUpdateFilmRequest(_ context.Context, r *http.Request) (request in
 // @Failure 404 {object} response.ErrorResponse "Not Found"
 // @Failure 500 {object} response.ErrorResponse "Internal Server Error"
 // @Router /films/{id} [get] .
-func decodeHTTPViewFilmRequest(_ context.Context, r *http.Request) (request interface{}, err error) {
-	// Get UUID from path
-	uuidFromPath, err := httpTransport.GetValueFromPath(r, "id")
-	if err != nil {
-		return nil, err
+func decodeHTTPViewFilmRequest(ctx context.Context, r *http.Request) (request interface{}, err error) {
+	// Get Gin context
+	ginCtx, errGin := httpTransport.GetGinContext(ctx)
+	if errGin != nil {
+		return nil, errGin
 	}
 
-	return endpoints.ViewFilmRequest{UUID: uuidFromPath}, nil
+	return endpoints.ViewFilmRequest{UUID: ginCtx.Param("id")}, nil
 }
 
 // ViewAllFilms godoc
@@ -231,18 +248,18 @@ func decodeHTTPViewAllFilmsRequest(_ context.Context, r *http.Request) (request 
 // @Failure 422 {object} response.ErrorResponseValidation "Data Validation Failed"
 // @Failure 500 {object} response.ErrorResponse "Internal Server Error"
 // @Router /films/{id} [delete] .
-func decodeHTTPDeleteFilmRequest(_ context.Context, r *http.Request) (request interface{}, err error) {
-	// Get UUID from path
-	uuidFromPath, err := httpTransport.GetValueFromPath(r, "id")
-	if err != nil {
-		return nil, err
+func decodeHTTPDeleteFilmRequest(ctx context.Context, r *http.Request) (request interface{}, err error) {
+	// Get Gin context
+	ginCtx, errGin := httpTransport.GetGinContext(ctx)
+	if errGin != nil {
+		return nil, errGin
 	}
 
 	// Get UserID from context
-	userID, err := utils.GetValueFromContext(r.Context(), auth.ContextKeyUserID)
+	userID, err := utils.GetValueFromContext(ginCtx.Request.Context(), auth.ContextKeyUserID)
 	if err != nil {
 		return nil, httpTransport.ErrContextUserID
 	}
 
-	return endpoints.DeleteFilmRequest{UUID: uuidFromPath, CreatorID: userID}, nil
+	return endpoints.DeleteFilmRequest{UUID: ginCtx.Param("id"), CreatorID: userID}, nil
 }

@@ -1094,8 +1094,7 @@ const docTemplate = `{
         "ApiKeyAuth": {
             "type": "apiKey",
             "name": "Authorization",
-            "in": "header",
-            "x-bearerformat": "Bearer"
+            "in": "header"
         }
     }
 }`

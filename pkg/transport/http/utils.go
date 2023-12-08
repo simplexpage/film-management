@@ -1,21 +1,9 @@
 package http
 
 import (
-	"github.com/gorilla/mux"
 	"net/http"
 	"strconv"
 )
-
-// GetValueFromPath Get value from path.
-func GetValueFromPath(r *http.Request, key string) (string, error) {
-	vars := mux.Vars(r)
-	value, ok := vars[key]
-	if !ok {
-		return "", ErrBadRouting
-	}
-
-	return value, nil
-}
 
 // GetIntParamFromHTTPRequest Get int value from path.
 func GetIntParamFromHTTPRequest(paramName string, r *http.Request, target *int) error {

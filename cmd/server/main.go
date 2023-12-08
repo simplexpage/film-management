@@ -184,7 +184,7 @@ func main() {
 		router.Use(cors.New(configCORS))
 
 		// Init Auth middleware
-		router.Use(authMiddleware.Middleware(cfg.HTTP.NotAuthUrls, authService))
+		router.Use(authMiddleware.Middleware(authService, cfg.HTTP.NotAuthUrls))
 
 		// Init HTTP routes
 		//
@@ -193,7 +193,7 @@ func main() {
 		// User routes
 		httpUserHandler.SetHTTPRoutes(router, userEndpoints, log)
 		// Film routes
-		httpFilmHandler.SetHTTPRoutes(router, filmEndpoints)
+		httpFilmHandler.SetHTTPRoutes(router, filmEndpoints, log)
 	}
 
 	// Init metrics handler

@@ -729,5 +729,4 @@ securityDefinitions:
     in: header
     name: Authorization
     type: apiKey
-    x-bearerformat: Bearer
 swagger: "2.0"
